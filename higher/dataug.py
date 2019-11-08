@@ -316,6 +316,8 @@ class Data_augV3(nn.Module): #Echantillonage uniforme/Mixte
 class Data_augV4(nn.Module): #Transformations avec mask
     def __init__(self, TF_dict=TF.TF_dict, N_TF=1, mix_dist=0.0):
         super(Data_augV4, self).__init__()
+        assert len(TF_dict)>0
+        
         self._data_augmentation = True
 
         #self._TF_matrix={}

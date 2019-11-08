@@ -43,6 +43,7 @@ def plot_res(log, fig_name='res'):
 
     fig_name = fig_name.replace('.',',')
     plt.savefig(fig_name)
+    plt.close()
 
 def plot_compare(filenames, fig_name='res'):
 
@@ -82,6 +83,7 @@ def plot_compare(filenames, fig_name='res'):
     fig_name = fig_name.replace('.',',')
 
     plt.savefig(fig_name, bbox_inches='tight')
+    plt.close()
 
 def viz_sample_data(imgs, labels, fig_name='data_sample'):
 
@@ -97,6 +99,7 @@ def viz_sample_data(imgs, labels, fig_name='data_sample'):
         plt.xlabel(labels[i].item())
 
     plt.savefig(fig_name)
+    plt.close()
 
 def model_copy(src,dst, patch_copy=True, copy_grad=True):
     #model=copy.deepcopy(fmodel) #Pas approprie, on ne souhaite que les poids/grad (pas tout fmodel et ses etats)
