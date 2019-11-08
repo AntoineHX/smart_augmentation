@@ -80,8 +80,35 @@ def plot_compare(filenames, fig_name='res'):
     ax[1].set_title('Acc')
     ax[2].set_title('Param')
     for a in ax: a.legend()
-    fig_name = fig_name.replace('.',',')
 
+    fig_name = fig_name.replace('.',',')
+    plt.savefig(fig_name, bbox_inches='tight')
+    plt.close()
+
+def plot_res_compare(filenames, fig_name='res'):
+
+    all_data=[]
+    #legend=""
+    for idx, file in enumerate(filenames):
+        #legend+=str(idx)+'-'+file+'\n'
+        with open(file) as json_file:
+            data = json.load(json_file)
+            all_data.append(data)
+
+    n_tf = [len(x["Param_names"]) for x in all_data]
+    acc = [x["Accuracy"] for x in all_data]
+    time = [x["Time"][0] for x in all_data]
+
+    fig, ax = plt.subplots(ncols=3, figsize=(30, 8))
+
+    ax[0].plot(n_tf, acc)
+    ax[1].plot(n_tf, time)
+
+    ax[0].set_title('Acc')
+    ax[1].set_title('Time')
+    #for a in ax: a.legend()
+
+    fig_name = fig_name.replace('.',',')
     plt.savefig(fig_name, bbox_inches='tight')
     plt.close()
 
