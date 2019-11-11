@@ -16,19 +16,19 @@ tf_names = [
     'Identity',
     'FlipUD',
     'FlipLR',
-    #'Rotate',
-    #'TranslateX',
-    #'TranslateY',
-    #'ShearX',
-    #'ShearY',
+    'Rotate',
+    'TranslateX',
+    'TranslateY',
+    'ShearX',
+    'ShearY',
 
     ## Color TF (Expect image in the range of [0, 1]) ##
-    #'Contrast',
-    #'Color',
+    'Contrast',
+    'Color',
     'Brightness',
-    #'Sharpness',
-    #'Posterize',
-    #'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
+    'Sharpness',
+    'Posterize',
+    'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
 
     #Non fonctionnel
     #'Auto_Contrast', #Pas opti pour des batch (Super lent)
@@ -671,15 +671,15 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
                 optim_copy(dopt=diffopt, opt=inner_opt)
 
                 meta_opt.step()
-                model['data_aug'].adjust_prob(soft=False) #Contrainte sum(proba)=1
+                model['data_aug'].adjust_prob(soft=True) #Contrainte sum(proba)=1
 
                 fmodel = higher.patch.monkeypatch(model, device=None, copy_initial_weights=True)
                 diffopt = higher.optim.get_diff_optim(inner_opt, model.parameters(),fmodel=fmodel, track_higher_grads=high_grad_track)
 
         tf = time.process_time()
 
-        viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_epoch{}_noTF'.format(epoch))
-        viz_sample_data(imgs=aug_model['data_aug'](xs), labels=ys, fig_name='samples/data_sample_epoch{}'.format(epoch))
+        #viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_epoch{}_noTF'.format(epoch))
+        #viz_sample_data(imgs=aug_model['data_aug'](xs), labels=ys, fig_name='samples/data_sample_epoch{}'.format(epoch))
         
         if(not high_grad_track): 
             countcopy+=1
@@ -764,13 +764,13 @@ if __name__ == "__main__":
     #'''
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     #tf_dict = TF.TF_dict
-    aug_model = Augmented_model(Data_augV4(TF_dict=TF.TF_dict, mix_dist=0.0), LeNet(3,10)).to(device)
+    aug_model = Augmented_model(Data_augV4(TF_dict=tf_dict, N_TF=1, mix_dist=0.0), LeNet(3,10)).to(device)
     print(str(aug_model), 'on', device_name)
     #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
     log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=10, loss_patience=10)
 
     ####
-    plot_res(log, fig_name="res/{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter))
+    plot_res(log, fig_name="res/{}-{} epochs (dataug:{})- {} in_it (SOFT)".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter))
     print('-'*9)
     times = [x["time"] for x in log]
     out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times)), "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}

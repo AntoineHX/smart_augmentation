@@ -126,6 +126,7 @@ def viz_sample_data(imgs, labels, fig_name='data_sample'):
         plt.xlabel(labels[i].item())
 
     plt.savefig(fig_name)
+    print("Sample saved :", fig_name)
     plt.close()
 
 def model_copy(src,dst, patch_copy=True, copy_grad=True):
