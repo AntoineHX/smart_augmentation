@@ -45,9 +45,9 @@ if __name__ == "__main__":
 
     ## Acc, Time, Epochs = f(n_tf) ##
     fig_name="res/TF_nb_tests_compare"
-    inner_its = [10]
-    dataug_epoch_starts= [0]
-    TF_nb = [14]#range(1,14+1)
+    inner_its = [0, 10]
+    dataug_epoch_starts= [0, -1]
+    TF_nb = range(1,14+1)
 
     fig, ax = plt.subplots(ncols=3, figsize=(30, 8))
     for in_it in inner_its:

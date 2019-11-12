@@ -114,8 +114,11 @@ def plot_res_compare(filenames, fig_name='res'):
 
 def plot_TF_res(log, tf_names, fig_name='res'):
 
+    mean = np.mean([x["param"] for x in log], axis=0)
+    std = np.std([x["param"] for x in log], axis=0)
+
     fig, ax = plt.subplots(1, 1, figsize=(30, 8), sharey=True)
-    ax.bar(tf_names, np.mean([x["param"] for x in log], axis=0), yerr=np.std([x["param"] for x in log], axis=0))
+    ax.bar(tf_names, mean, yerr=std)
     #ax.bar(tf_names, log[-1]["param"])
 
     fig_name = fig_name.replace('.',',')
