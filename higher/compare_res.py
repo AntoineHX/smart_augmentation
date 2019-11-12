@@ -1,29 +1,5 @@
 from utils import *
 
-tf_names = [
-    ## Geometric TF ##
-    'Identity',
-    'FlipUD',
-    'FlipLR',
-    'Rotate',
-    'TranslateX',
-    'TranslateY',
-    'ShearX',
-    'ShearY',
-
-    ## Color TF (Expect image in the range of [0, 1]) ##
-    'Contrast',
-    'Color',
-    'Brightness',
-    'Sharpness',
-    'Posterize',
-    'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
-
-    #Non fonctionnel
-    #'Auto_Contrast', #Pas opti pour des batch (Super lent)
-    #'Equalize',
-]
-
 if __name__ == "__main__":
 
     #### Comparison ####
@@ -44,15 +20,17 @@ if __name__ == "__main__":
     #plot_compare(filenames=files, fig_name="res/compare")
 
     ## Acc, Time, Epochs = f(n_tf) ##
-    fig_name="res/TF_nb_tests_compare"
+    fig_name="res/TF_seq_tests_compare"
     inner_its = [0, 10]
-    dataug_epoch_starts= [0, -1]
-    TF_nb = range(1,14+1)
+    dataug_epoch_starts= [0]
+    TF_nb = 14 #range(1,14+1)
+    N_seq_TF= [1, 2, 3, 4, 6]
 
     fig, ax = plt.subplots(ncols=3, figsize=(30, 8))
     for in_it in inner_its:
         for dataug in dataug_epoch_starts:
-            filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF)-LeNet)-200 epochs (dataug:{})- {} in_it.json".format(n_tf, dataug, in_it) for n_tf in TF_nb]
+            #filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF)-LeNet)-200 epochs (dataug:{})- {} in_it.json".format(n_tf, dataug, in_it) for n_tf in TF_nb]
+            filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF x {})-LeNet)-200 epochs (dataug:{})- {} in_it.json".format(TF_nb, n_tf, dataug, in_it) for n_tf in N_seq_TF]
 
             all_data=[]
             #legend=""
@@ -62,7 +40,8 @@ if __name__ == "__main__":
                     data = json.load(json_file)
                     all_data.append(data)
 
-            n_tf = [len(x["Param_names"]) for x in all_data]
+            n_tf = N_seq_TF
+            #n_tf = [len(x["Param_names"]) for x in all_data]
             acc = [x["Accuracy"] for x in all_data]
             epochs = [len(x["Log"]) for x in all_data]
             time = [x["Time"][0] for x in all_data]
