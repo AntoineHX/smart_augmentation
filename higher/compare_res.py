@@ -1,5 +1,29 @@
 from utils import *
 
+tf_names = [
+    ## Geometric TF ##
+    'Identity',
+    'FlipUD',
+    'FlipLR',
+    'Rotate',
+    'TranslateX',
+    'TranslateY',
+    'ShearX',
+    'ShearY',
+
+    ## Color TF (Expect image in the range of [0, 1]) ##
+    'Contrast',
+    'Color',
+    'Brightness',
+    'Sharpness',
+    'Posterize',
+    'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
+
+    #Non fonctionnel
+    #'Auto_Contrast', #Pas opti pour des batch (Super lent)
+    #'Equalize',
+]
+
 if __name__ == "__main__":
 
     #### Comparison ####
@@ -21,9 +45,9 @@ if __name__ == "__main__":
 
     ## Acc, Time, Epochs = f(n_tf) ##
     fig_name="res/TF_nb_tests_compare"
-    inner_its = [0, 10]
-    dataug_epoch_starts= [0, -1]
-    TF_nb = range(1,14+1)
+    inner_its = [10]
+    dataug_epoch_starts= [0]
+    TF_nb = [14]#range(1,14+1)
 
     fig, ax = plt.subplots(ncols=3, figsize=(30, 8))
     for in_it in inner_its:
@@ -48,9 +72,11 @@ if __name__ == "__main__":
             ax[1].plot(n_tf, time, label="{} in_it/{} dataug".format(in_it,dataug))
             ax[2].plot(n_tf, epochs, label="{} in_it/{} dataug".format(in_it,dataug))
 
+
             #for data in all_data:
                 #print(np.mean([x["param"] for x in data["Log"]], axis=0))
-            #    print(len(data["Param_names"]), np.argsort(np.argsort(np.mean([x["param"] for x in data["Log"]], axis=0))))
+                #print(len(data["Param_names"]), np.argsort(np.argsort(np.mean([x["param"] for x in data["Log"]], axis=0))))
+
 
     ax[0].set_title('Acc')
     ax[1].set_title('Time')

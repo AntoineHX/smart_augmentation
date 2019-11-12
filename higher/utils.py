@@ -112,6 +112,16 @@ def plot_res_compare(filenames, fig_name='res'):
     plt.savefig(fig_name, bbox_inches='tight')
     plt.close()
 
+def plot_TF_res(log, tf_names, fig_name='res'):
+
+    fig, ax = plt.subplots(1, 1, figsize=(30, 8), sharey=True)
+    ax.bar(tf_names, np.mean([x["param"] for x in log], axis=0), yerr=np.std([x["param"] for x in log], axis=0))
+    #ax.bar(tf_names, log[-1]["param"])
+
+    fig_name = fig_name.replace('.',',')
+    plt.savefig(fig_name, bbox_inches='tight')
+    plt.close()
+
 def viz_sample_data(imgs, labels, fig_name='data_sample'):
 
     sample = imgs[0:25,].permute(0, 2, 3, 1).squeeze().cpu()

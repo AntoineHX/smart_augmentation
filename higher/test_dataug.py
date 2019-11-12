@@ -734,7 +734,7 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
 ##########################################
 if __name__ == "__main__":
 
-    n_inner_iter = 10
+    n_inner_iter = 0
     epochs = 100
     dataug_epoch_start=0
 
@@ -764,7 +764,7 @@ if __name__ == "__main__":
     #'''
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     #tf_dict = TF.TF_dict
-    aug_model = Augmented_model(Data_augV4(TF_dict=tf_dict, N_TF=1, mix_dist=0.0), LeNet(3,10)).to(device)
+    aug_model = Augmented_model(Data_augV4(TF_dict=tf_dict, N_TF=2, mix_dist=0.0), LeNet(3,10)).to(device)
     print(str(aug_model), 'on', device_name)
     #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
     log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=10, loss_patience=10)
