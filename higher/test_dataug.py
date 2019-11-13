@@ -783,8 +783,8 @@ if __name__ == "__main__":
     #### TF number tests ####
     #'''
     res_folder="res/TF_nb_tests/"
-    epochs= 200
-    inner_its = [0, 10]
+    epochs= 100
+    inner_its = [10]
     dataug_epoch_starts= [0]
     TF_nb = [len(TF.TF_dict)] #range(1,len(TF.TF_dict)+1)
     N_seq_TF= [1, 2, 3, 4]
@@ -808,7 +808,7 @@ if __name__ == "__main__":
                     aug_model = Augmented_model(Data_augV4(TF_dict=ntf_dict, N_TF=n_tf, mix_dist=0.0), LeNet(3,10)).to(device)
                     print(str(aug_model), 'on', device_name)
                     #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
-                    log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=10, loss_patience=10)
+                    log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=10, loss_patience=None)
 
                     ####
                     plot_res(log, fig_name=res_folder+"{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter))
