@@ -15,7 +15,7 @@ def print_graph(PyTorch_obj, fig_name='graph'):
     graph.format = 'svg' #https://graphviz.readthedocs.io/en/stable/manual.html#formats
     graph.render(fig_name)
 
-def plot_res(log, fig_name='res'):
+def plot_res(log, fig_name='res', param_names=None):
 
     epochs = [x["epoch"] for x in log]
 
@@ -36,10 +36,13 @@ def plot_res(log, fig_name='res'):
             ax[2].legend()
         else :
             ax[2].set_title('Prob')
-            for idx, _ in enumerate(log[0]["param"]):
-                ax[2].plot(epochs,[x["param"][idx] for x in log], label='P'+str(idx))
-            ax[2].legend() 
-            #ax[2].legend(('P-0', 'P-45', 'P-180'))
+            #for idx, _ in enumerate(log[0]["param"]):
+                #ax[2].plot(epochs,[x["param"][idx] for x in log], label='P'+str(idx))
+            if not param_names : param_names = ['P'+str(idx) for idx, _ in enumerate(log[0]["param"])]
+            proba=[[x["param"][idx] for x in log] for idx, _ in enumerate(log[0]["param"])]
+            ax[2].stackplot(epochs, proba, labels=param_names)
+            ax[2].legend(param_names, loc='center left', bbox_to_anchor=(1, 0.5)) 
+            
 
     fig_name = fig_name.replace('.',',')
     plt.savefig(fig_name)
@@ -192,6 +195,20 @@ def print_torch_mem(add_info=''):
     print(add_info, "-Pytroch tensor nb:",nb," / Max dim:", max_size)
 
     #print(add_info, "-Garbage size :",len(gc.garbage))
+
+    """Simple GPU memory report."""
+
+    mega_bytes = 1024.0 * 1024.0
+    string = add_info + ' memory (MB)'
+    string += ' | allocated: {}'.format(
+        torch.cuda.memory_allocated() / mega_bytes)
+    string += ' | max allocated: {}'.format(
+        torch.cuda.max_memory_allocated() / mega_bytes)
+    string += ' | cached: {}'.format(torch.cuda.memory_cached() / mega_bytes)
+    string += ' | max cached: {}'.format(
+        torch.cuda.max_memory_cached()/ mega_bytes)
+    print(string)
+
 
 class loss_monitor(): #Voir https://github.com/pytorch/ignite
     def __init__(self, patience, end_train=1):
