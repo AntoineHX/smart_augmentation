@@ -37,8 +37,8 @@ else:
 ##########################################
 if __name__ == "__main__":
 
-    n_inner_iter = 0
-    epochs = 100
+    n_inner_iter = 10
+    epochs = 200
     dataug_epoch_start=0
 
     #### Classic ####

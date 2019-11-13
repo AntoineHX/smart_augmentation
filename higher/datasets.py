@@ -3,8 +3,8 @@ from torch.utils.data import SubsetRandomSampler
 import torchvision
 
 BATCH_SIZE = 300
-#TEST_SIZE = 300
-TEST_SIZE = 10000
+TEST_SIZE = 300
+#TEST_SIZE = 10000
 
 #ATTENTION : Dataug (Kornia) Expect image in the range of [0, 1]
 #transform_train = torchvision.transforms.Compose([
