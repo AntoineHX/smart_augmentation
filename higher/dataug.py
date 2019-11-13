@@ -553,9 +553,10 @@ class Augmented_model(nn.Module):
             mode=self._data_augmentation
         self._mods['data_aug'].augment(mode)
         super(Augmented_model, self).train(mode)
+        return self
 
     def eval(self):
-        self.train(mode=False)
+        return self.train(mode=False)
         #super(Augmented_model, self).eval()
 
     def items(self):
