@@ -21,16 +21,18 @@ if __name__ == "__main__":
 
     ## Acc, Time, Epochs = f(n_tf) ##
     fig_name="res/TF_seq_tests_compare"
-    inner_its = [0, 10]
+    inner_its = [10]
     dataug_epoch_starts= [0]
     TF_nb = 14 #range(1,14+1)
-    N_seq_TF= [1, 2, 3, 4, 6]
+    N_seq_TF= [1, 2, 3, 4]
 
     fig, ax = plt.subplots(ncols=3, figsize=(30, 8))
     for in_it in inner_its:
         for dataug in dataug_epoch_starts:
             #filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF)-LeNet)-200 epochs (dataug:{})- {} in_it.json".format(n_tf, dataug, in_it) for n_tf in TF_nb]
             filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF x {})-LeNet)-200 epochs (dataug:{})- {} in_it.json".format(TF_nb, n_tf, dataug, in_it) for n_tf in N_seq_TF]
+            filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF x {})-LeNet)-100 epochs (dataug:{})- {} in_it.json".format(TF_nb, n_tf, dataug, in_it) for n_tf in N_seq_TF]
+
 
             all_data=[]
             #legend=""
