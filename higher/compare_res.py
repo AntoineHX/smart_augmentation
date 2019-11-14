@@ -20,23 +20,24 @@ if __name__ == "__main__":
     #plot_compare(filenames=files, fig_name="res/compare")
 
     ## Acc, Time, Epochs = f(n_tf) ##
+    #fig_name="res/TF_nb_tests_compare"
     fig_name="res/TF_seq_tests_compare"
-    inner_its = [0]
+    inner_its = [0, 10]
     dataug_epoch_starts= [0]
-    TF_nb = range(1,14+1)
-    N_seq_TF= [1] #, 2, 3, 4]
+    TF_nb = 14#[len(TF.TF_dict)] #range(10,len(TF.TF_dict)+1) #[len(TF.TF_dict)]
+    N_seq_TF= [1, 2, 3, 4, 6] #[1]
 
     fig, ax = plt.subplots(ncols=3, figsize=(30, 8))
     for in_it in inner_its:
         for dataug in dataug_epoch_starts:
 
-            n_tf = TF_nb
+            #n_tf = TF_nb
             #filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF)-LeNet)-200 epochs (dataug:{})- {} in_it.json".format(n_tf, dataug, in_it) for n_tf in TF_nb]
-            filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF x {})-LeNet)-200 epochs (dataug:{})- {} in_it.json".format(n_tf, 1, dataug, in_it) for n_tf in TF_nb]
+            #filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF x {})-LeNet)-200 epochs (dataug:{})- {} in_it.json".format(n_tf, 1, dataug, in_it) for n_tf in TF_nb]
 
-            #n_tf = N_seq_TF
+            n_tf = N_seq_TF
             #filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF x {})-LeNet)-200 epochs (dataug:{})- {} in_it.json".format(TF_nb, n_tf, dataug, in_it) for n_tf in N_seq_TF]
-            #filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF x {})-LeNet)-100 epochs (dataug:{})- {} in_it.json".format(TF_nb, n_tf, dataug, in_it) for n_tf in N_seq_TF]
+            filenames =["res/TF_nb_tests/log/Aug_mod(Data_augV4(Uniform-{} TF x {})-LeNet)-200 epochs (dataug:{})- {} in_it.json".format(TF_nb, n_tf, dataug, in_it) for n_tf in N_seq_TF]
 
 
             all_data=[]

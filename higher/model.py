@@ -55,6 +55,7 @@ class LeNet(nn.Module):
 #https://github.com/xternalz/WideResNet-pytorch/blob/master/wideresnet.py
 #https://github.com/arcelien/pba/blob/master/pba/wrn.py
 #https://github.com/szagoruyko/wide-residual-networks/blob/master/pytorch/resnet.py
+
 class BasicBlock(nn.Module):
     def __init__(self, in_planes, out_planes, stride, dropRate=0.0):
         super(BasicBlock, self).__init__()
