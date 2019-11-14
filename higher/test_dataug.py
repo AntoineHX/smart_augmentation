@@ -91,7 +91,7 @@ if __name__ == "__main__":
     #'''
     res_folder="res/TF_nb_tests/"
     epochs= 100
-    inner_its = [0, 10]
+    inner_its = [0, 1, 10]
     dataug_epoch_starts= [0]
     TF_nb = [len(TF.TF_dict)] #range(10,len(TF.TF_dict)+1) #[len(TF.TF_dict)]
     N_seq_TF= [2, 3, 4, 6]
