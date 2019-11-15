@@ -3,30 +3,54 @@ import kornia
 import random
 
 ### Available TF for Dataug ###
+'''
 TF_dict={ #f(mag_normalise)=mag_reelle
   ## Geometric TF ##
   'Identity' : (lambda mag: None),
   'FlipUD' : (lambda mag: None),
   'FlipLR' : (lambda mag: None),
-  'Rotate': (lambda mag: random.randint(-int_parameter(mag, maxval=30), int_parameter(mag, maxval=30))),
-  'TranslateX': (lambda mag: [random.randint(-int_parameter(mag, maxval=20), int_parameter(mag, maxval=20)), 0]),
-  'TranslateY': (lambda mag: [0, random.randint(-int_parameter(mag, maxval=20), int_parameter(mag, maxval=20))]),
-  'ShearX': (lambda mag: [random.uniform(-float_parameter(mag, maxval=0.3), float_parameter(mag, maxval=0.3)), 0]),
-  'ShearY': (lambda mag: [0, random.uniform(-float_parameter(mag, maxval=0.3), float_parameter(mag, maxval=0.3))]),
+  'Rotate': (lambda mag: rand_int(mag,maxval=30)),
+  'TranslateX': (lambda mag: [rand_int(mag,maxval=20), 0]),
+  'TranslateY': (lambda mag: [0, rand_int(mag,maxval=20)]),
+  'ShearX': (lambda mag: [rand_float(mag, maxval=0.3), 0]),
+  'ShearY': (lambda mag: [0, rand_float(mag, maxval=0.3)]),
 
   ## Color TF (Expect image in the range of [0, 1]) ##
-  'Contrast': (lambda mag: random.uniform(0.1, float_parameter(mag, maxval=1.9))),
-  'Color':(lambda mag: random.uniform(0.1, float_parameter(mag, maxval=1.9))),
-  'Brightness':(lambda mag: random.uniform(1., float_parameter(mag, maxval=1.9))),
-  'Sharpness':(lambda mag: random.uniform(0.1, float_parameter(mag, maxval=1.9))),
-  'Posterize': (lambda mag: random.randint(4, int_parameter(mag, maxval=8))),
-  'Solarize': (lambda mag: random.randint(1, int_parameter(mag, maxval=256))/256.), #=>Image entre [0,1] #Pas opti pour des batch
+  'Contrast': (lambda mag: rand_float(mag,minval=0.1, maxval=1.9)),
+  'Color':(lambda mag: rand_float(mag,minval=0.1, maxval=1.9)),
+  'Brightness':(lambda mag: rand_float(mag,minval=1., maxval=1.9)),
+  'Sharpness':(lambda mag: rand_float(mag,minval=0.1, maxval=1.9)),
+  'Posterize': (lambda mag: rand_int(mag,minval=4, maxval=8)),
+  'Solarize': (lambda mag: rand_int(mag,minval=1, maxval=256)/256.), #=>Image entre [0,1] #Pas opti pour des batch
 
   #Non fonctionnel
   #'Auto_Contrast': (lambda mag: None), #Pas opti pour des batch (Super lent)
   #'Equalize': (lambda mag: None),
 }
+'''
+TF_dict={
+  ## Geometric TF ##
+  'Identity' : (lambda x, mag: x),
+  'FlipUD' : (lambda x, mag: flipUD(x)),
+  'FlipLR' : (lambda x, mag: flipLR(x)),
+  'Rotate': (lambda x, mag: rotate(x, angle=torch.tensor([rand_int(mag, maxval=30)for _ in x], device=x.device))),
+  'TranslateX': (lambda x, mag: translate(x, translation=torch.tensor([[rand_int(mag, maxval=20), 0] for _ in x], device=x.device))),
+  'TranslateY': (lambda x, mag: translate(x, translation=torch.tensor([[0, rand_int(mag, maxval=20)] for _ in x], device=x.device))),
+  'ShearX': (lambda x, mag: shear(x, shear=torch.tensor([[rand_float(mag, maxval=0.3), 0] for _ in x], device=x.device))),
+  'ShearY': (lambda x, mag: shear(x, shear=torch.tensor([[0, rand_float(mag, maxval=0.3)] for _ in x], device=x.device))),
 
+  ## Color TF (Expect image in the range of [0, 1]) ##
+  'Contrast': (lambda x, mag: contrast(x, contrast_factor=torch.tensor([rand_float(mag, minval=0.1, maxval=1.9) for _ in x], device=x.device))),
+  'Color':(lambda x, mag: color(x, color_factor=torch.tensor([rand_float(mag, minval=0.1, maxval=1.9) for _ in x], device=x.device))),
+  'Brightness':(lambda x, mag: brightness(x, brightness_factor=torch.tensor([rand_float(mag, minval=1., maxval=1.9) for _ in x], device=x.device))),
+  'Sharpness':(lambda x, mag: sharpeness(x, sharpness_factor=torch.tensor([rand_float(mag, minval=0.1, maxval=1.9) for _ in x], device=x.device))),
+  'Posterize': (lambda x, mag: posterize(x, bits=torch.tensor([rand_int(mag, minval=4, maxval=8) for _ in x], device=x.device))),
+  'Solarize': (lambda x, mag: solarize(x, thresholds=torch.tensor([rand_int(mag,minval=1, maxval=256)/256. for _ in x], device=x.device))) , #=>Image entre [0,1] #Pas opti pour des batch
+
+  #Non fonctionnel
+  #'Auto_Contrast': (lambda mag: None), #Pas opti pour des batch (Super lent)
+  #'Equalize': (lambda mag: None),
+}
 
 def int_image(float_image): #ATTENTION : legere perte d'info (granularite : 1/256 = 0.0039)
   return (float_image*255.).type(torch.uint8)
@@ -34,8 +58,19 @@ def int_image(float_image): #ATTENTION : legere perte d'info (granularite : 1/25
 def float_image(int_image):
   return int_image.type(torch.float)/255.
 
-def rand_inverse(value):
-    return  value if random.random() < 0.5 else -value
+#def rand_inverse(value):
+#    return  value if random.random() < 0.5 else -value
+
+def rand_int(mag, maxval, minval=None): #[(-maxval,minval), maxval]
+  real_max = int_parameter(mag, maxval=maxval)
+  if not minval : minval = -real_max
+  return random.randint(minval, real_max)
+
+def rand_float(mag, maxval, minval=None): #[(-maxval,minval), maxval]
+  real_max = float_parameter(mag, maxval=maxval)
+  if not minval : minval = -real_max
+  return random.uniform(minval, real_max)
+
     
 #https://github.com/tensorflow/models/blob/fc2056bce6ab17eabdc139061fef8f4f2ee763ec/research/autoaugment/augmentation_transforms.py#L137
 PARAMETER_MAX = 10  # What is the max 'level' a transform could be predicted
