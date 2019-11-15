@@ -649,6 +649,7 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
             print('Data Augmention : {} (Epoch {})'.format(model._data_augmentation, dataug_epoch_start))
             print('TF Proba :', model['data_aug']['prob'].data)
             #print('proba grad',aug_model['data_aug']['prob'].grad)
+            print('TF Mag :', model['data_aug']['mag'].data)
         #############
         #### Log ####
         data={
