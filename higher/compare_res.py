@@ -2,21 +2,18 @@ from utils import *
 
 if __name__ == "__main__":
 
-    #### Comparison ####
-
-    ## Loss , Acc, Proba = f(epoch) ##
+    '''
     files=[
-        #"res/log/LeNet-100 epochs.json",
-        #"res/log/Aug_mod(Data_augV4(Uniform-4 TF)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
-        #"res/log/Aug_mod(Data_augV4(Uniform-4 TF)-LeNet)-100 epochs (dataug:50)- 0 in_it.json",
-        #"res/log/Aug_mod(Data_augV4(Uniform-3 TF)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
-        #"res/log/Aug_mod(Data_augV3(Uniform-3 TF)-LeNet)-100 epochs (dataug:50)- 10 in_it.json",
-        #"res/log/Aug_mod(Data_augV4(Mix 0,5-3 TF)-LeNet)-100 epochs (dataug:0)- 1 in_it.json",
-        #"res/log/Aug_mod(Data_augV4(Mix 0.5-3 TF)-LeNet)-100 epochs (dataug:50)- 10 in_it.json",
-        #"res/log/Aug_mod(Data_augV4(Uniform-3 TF)-LeNet)-100 epochs (dataug:0)- 10 in_it.json",
-        #"res/log/Aug_mod(Data_augV4(Uniform-10 TF)-LeNet)-100 epochs (dataug:50)- 10 in_it.json",
-        #"res/log/Aug_mod(Data_augV4(Uniform-10 TF)-LeNet)-100 epochs (dataug:50)- 0 in_it.json",
+        "res/log/Aug_mod(Data_augV5(Mix0.5-11TFx1-MagSh)-LeNet)-2 epochs (dataug:0)- 1 in_it.json",
     ]
+
+    for idx, file in enumerate(files):
+        #legend+=str(idx)+'-'+file+'\n'
+        with open(file) as json_file:
+            data = json.load(json_file)
+            plot_resV2(data['Log'], fig_name=file.replace('.json','').replace('log/',''), param_names=data['Param_names'])
+    '''
+    ## Loss , Acc, Proba = f(epoch) ##
     #plot_compare(filenames=files, fig_name="res/compare")
 
     ## Acc, Time, Epochs = f(n_tf) ##

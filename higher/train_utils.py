@@ -650,9 +650,11 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
             print('TF Proba :', model['data_aug']['prob'].data)
             #print('proba grad',model['data_aug']['prob'].grad)
             print('TF Mag :', model['data_aug']['mag'].data)
-            print('Mag grad',model['data_aug']['mag'].grad)
+            #print('Mag grad',model['data_aug']['mag'].grad)
         #############
         #### Log ####
+        #print(type(model['data_aug']) is dataug.Data_augV5)
+        param = [{'p': p.item(), 'm':model['data_aug']['mag'].item()} for p in model['data_aug']['prob']] if model['data_aug']._shared_mag else [{'p': p.item(), 'm': m.item()} for p, m in zip(model['data_aug']['prob'], model['data_aug']['mag'])]
         data={
             "epoch": epoch,
             "train_loss": loss.item(),
@@ -660,7 +662,8 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
             "acc": accuracy,
             "time": tf - t0,
 
-            "param": [p.item() for p in model['data_aug']['prob']],
+            "param": param #if isinstance(model['data_aug'], Data_augV5) 
+            #else [p.item() for p in model['data_aug']['prob']],
         }
         log.append(data)
         #############

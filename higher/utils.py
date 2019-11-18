@@ -52,28 +52,41 @@ def plot_resV2(log, fig_name='res', param_names=None):
 
     epochs = [x["epoch"] for x in log]
 
-    fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(15, 15))
+    fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(30, 15))
 
     ax[0, 0].set_title('Loss')
     ax[0, 0].plot(epochs,[x["train_loss"] for x in log], label='Train')
     ax[0, 0].plot(epochs,[x["val_loss"] for x in log], label='Val')
     ax[0, 0].legend()
         
-    ax[0, 1].set_title('Acc')
-    ax[0, 1].plot(epochs,[x["acc"] for x in log]) 
+    ax[1, 0].set_title('Acc')
+    ax[1, 0].plot(epochs,[x["acc"] for x in log]) 
 
     if log[0]["param"]!= None:
-        ax[1, 1].set_title('Prob')
         if not param_names : param_names = ['P'+str(idx) for idx, _ in enumerate(log[0]["param"])]
-        proba=[[x["param"][idx] for x in log] for idx, _ in enumerate(log[0]["param"])]
-        ax[1, 1].stackplot(epochs, proba, labels=param_names)
-        ax[1, 1].legend(param_names, loc='center left', bbox_to_anchor=(1, 0.5)) 
+        #proba=[[x["param"][idx] for x in log] for idx, _ in enumerate(log[0]["param"])]
+        proba=[[x["param"][idx]['p'] for x in log] for idx, _ in enumerate(log[0]["param"])]
+        mag=[[x["param"][idx]['m'] for x in log] for idx, _ in enumerate(log[0]["param"])]
 
-        ax[1, 0].set_title('Mean prob')
-        mean = np.mean([x["param"] for x in log], axis=0)
-        std = np.std([x["param"] for x in log], axis=0)
-        ax[1, 0].bar(param_names, mean, yerr=std)
-        plt.sca(ax[1, 0]), plt.xticks(rotation=90)
+        ax[0, 1].set_title('Prob =f(epoch)')
+        ax[0, 1].stackplot(epochs, proba, labels=param_names)
+        #ax[0, 1].legend(param_names, loc='center left', bbox_to_anchor=(1, 0.5)) 
+
+        ax[1, 1].set_title('Prob =f(TF)')
+        mean = np.mean(proba, axis=1)
+        std = np.std(proba, axis=1)
+        ax[1, 1].bar(param_names, mean, yerr=std)
+        plt.sca(ax[1, 1]), plt.xticks(rotation=90)
+
+        ax[0, 2].set_title('Mag =f(epoch)')
+        ax[0, 2].stackplot(epochs, mag, labels=param_names)
+        ax[0, 2].legend(param_names, loc='center left', bbox_to_anchor=(1, 0.5)) 
+
+        ax[1, 2].set_title('Mag =f(TF)')
+        mean = np.mean(mag, axis=1)
+        std = np.std(mag, axis=1)
+        ax[1, 2].bar(param_names, mean, yerr=std)
+        plt.sca(ax[1, 2]), plt.xticks(rotation=90)
             
 
     fig_name = fig_name.replace('.',',')
