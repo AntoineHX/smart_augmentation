@@ -86,7 +86,7 @@ def zero_stack(tensor, zero_pos):
     raise Exception("Invalid zero_pos : ", zero_pos) 
     
 #https://github.com/tensorflow/models/blob/fc2056bce6ab17eabdc139061fef8f4f2ee763ec/research/autoaugment/augmentation_transforms.py#L137
-PARAMETER_MAX = 10  # What is the max 'level' a transform could be predicted
+PARAMETER_MAX = 1  # What is the max 'level' a transform could be predicted
 def float_parameter(level, maxval):
   """Helper function to scale `val` between 0 and maxval .
   Args:
@@ -98,7 +98,7 @@ def float_parameter(level, maxval):
   """
 
   #return float(level) * maxval / PARAMETER_MAX
-  return (level * maxval / PARAMETER_MAX)#.to(torch.float32)
+  return (level * maxval / PARAMETER_MAX)#.to(torch.float)
 
 def int_parameter(level, maxval): #Perte de gradient
   """Helper function to scale `val` between 0 and maxval .
@@ -135,11 +135,11 @@ def flipUD(x):
     return kornia.warp_perspective(x, M, dsize=(h, w))
 
 def rotate(x, angle):
-  return kornia.rotate(x, angle=angle.type(torch.float32)) #Kornia ne supporte pas les int
+  return kornia.rotate(x, angle=angle.type(torch.float)) #Kornia ne supporte pas les int
 
 def translate(x, translation):
   #print(translation)
-  return kornia.translate(x, translation=translation.type(torch.float32)) #Kornia ne supporte pas les int
+  return kornia.translate(x, translation=translation.type(torch.float)) #Kornia ne supporte pas les int
 
 def shear(x, shear):
   return kornia.shear(x, shear=shear)
