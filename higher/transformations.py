@@ -4,32 +4,7 @@ import random
 
 ### Available TF for Dataug ###
 '''
-TF_dict={ #f(mag_normalise)=mag_reelle
-  ## Geometric TF ##
-  'Identity' : (lambda mag: None),
-  'FlipUD' : (lambda mag: None),
-  'FlipLR' : (lambda mag: None),
-  'Rotate': (lambda mag: rand_int(mag,maxval=30)),
-  'TranslateX': (lambda mag: [rand_int(mag,maxval=20), 0]),
-  'TranslateY': (lambda mag: [0, rand_int(mag,maxval=20)]),
-  'ShearX': (lambda mag: [rand_float(mag, maxval=0.3), 0]),
-  'ShearY': (lambda mag: [0, rand_float(mag, maxval=0.3)]),
-
-  ## Color TF (Expect image in the range of [0, 1]) ##
-  'Contrast': (lambda mag: rand_float(mag,minval=0.1, maxval=1.9)),
-  'Color':(lambda mag: rand_float(mag,minval=0.1, maxval=1.9)),
-  'Brightness':(lambda mag: rand_float(mag,minval=1., maxval=1.9)),
-  'Sharpness':(lambda mag: rand_float(mag,minval=0.1, maxval=1.9)),
-  'Posterize': (lambda mag: rand_int(mag,minval=4, maxval=8)),
-  'Solarize': (lambda mag: rand_int(mag,minval=1, maxval=256)/256.), #=>Image entre [0,1] #Pas opti pour des batch
-
-  #Non fonctionnel
-  #'Auto_Contrast': (lambda mag: None), #Pas opti pour des batch (Super lent)
-  #'Equalize': (lambda mag: None),
-}
-'''
-'''
-TF_dict={
+TF_dict={ #Dataugv4
   ## Geometric TF ##
   'Identity' : (lambda x, mag: x),
   'FlipUD' : (lambda x, mag: flipUD(x)),
@@ -53,25 +28,28 @@ TF_dict={
   #'Equalize': (lambda mag: None),
 }
 '''
-TF_dict={
+TF_dict={ #Dataugv5
   ## Geometric TF ##
   'Identity' : (lambda x, mag: x),
   'FlipUD' : (lambda x, mag: flipUD(x)),
   'FlipLR' : (lambda x, mag: flipLR(x)),
-  'Rotate': (lambda x, mag: rotate(x, angle=rand_float(size=x.shape[0], mag=mag, maxval=30))),
-  'TranslateX': (lambda x, mag: translate(x, translation=zero_stack(rand_float(size=(x.shape[0],), mag=mag, maxval=20), zero_pos=0))),
-  'TranslateY': (lambda x, mag: translate(x, translation=zero_stack(rand_float(size=(x.shape[0],), mag=mag, maxval=20), zero_pos=1))),
-  'ShearX': (lambda x, mag: shear(x, shear=zero_stack(rand_float(size=(x.shape[0],), mag=mag, maxval=0.3), zero_pos=0))),
-  'ShearY': (lambda x, mag: shear(x, shear=zero_stack(rand_float(size=(x.shape[0],), mag=mag, maxval=0.3), zero_pos=1))),
+  'Rotate': (lambda x, mag: rotate(x, angle=rand_floats(size=x.shape[0], mag=mag, maxval=30))),
+  'TranslateX': (lambda x, mag: translate(x, translation=zero_stack(rand_floats(size=(x.shape[0],), mag=mag, maxval=20), zero_pos=0))),
+  'TranslateY': (lambda x, mag: translate(x, translation=zero_stack(rand_floats(size=(x.shape[0],), mag=mag, maxval=20), zero_pos=1))),
+  'ShearX': (lambda x, mag: shear(x, shear=zero_stack(rand_floats(size=(x.shape[0],), mag=mag, maxval=0.3), zero_pos=0))),
+  'ShearY': (lambda x, mag: shear(x, shear=zero_stack(rand_floats(size=(x.shape[0],), mag=mag, maxval=0.3), zero_pos=1))),
 
   ## Color TF (Expect image in the range of [0, 1]) ##
-  'Contrast': (lambda x, mag: contrast(x, contrast_factor=rand_float(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
-  'Color':(lambda x, mag: color(x, color_factor=rand_float(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
-  'Brightness':(lambda x, mag: brightness(x, brightness_factor=rand_float(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
-  'Sharpness':(lambda x, mag: sharpeness(x, sharpness_factor=rand_float(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
-  'Posterize': (lambda x, mag: posterize(x, bits=rand_float(size=x.shape[0], mag=mag, minval=4., maxval=8.))),#Perte du gradient
-  'Solarize': (lambda x, mag: solarize(x, thresholds=rand_float(size=x.shape[0], mag=mag, minval=1/256., maxval=256/256.))), #Perte du gradient #=>Image entre [0,1] #Pas opti pour des batch
-
+  'Contrast': (lambda x, mag: contrast(x, contrast_factor=rand_floats(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
+  'Color':(lambda x, mag: color(x, color_factor=rand_floats(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
+  'Brightness':(lambda x, mag: brightness(x, brightness_factor=rand_floats(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
+  'Sharpness':(lambda x, mag: sharpeness(x, sharpness_factor=rand_floats(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
+  'Posterize': (lambda x, mag: posterize(x, bits=rand_floats(size=x.shape[0], mag=mag, minval=4., maxval=8.))),#Perte du gradient
+  'Solarize': (lambda x, mag: solarize(x, thresholds=rand_floats(size=x.shape[0], mag=mag, minval=1/256., maxval=256/256.))), #Perte du gradient #=>Image entre [0,1] #Pas opti pour des batch
+  
+  #Non fonctionnel
+  #'Auto_Contrast': (lambda mag: None), #Pas opti pour des batch (Super lent)
+  #'Equalize': (lambda mag: None),
 }
 
 def int_image(float_image): #ATTENTION : legere perte d'info (granularite : 1/256 = 0.0039)
@@ -93,7 +71,7 @@ def rand_float(mag, maxval, minval=None): #[(-maxval,minval), maxval]
   if not minval : minval = -real_max
   return random.uniform(minval, real_max)
 
-def rand_float(size, mag, maxval, minval=None): #[(-maxval,minval), maxval]
+def rand_floats(size, mag, maxval, minval=None): #[(-maxval,minval), maxval]
   real_max = float_parameter(mag, maxval=maxval)
   if not minval : minval = -real_max
   #return random.uniform(minval, real_max)
@@ -122,7 +100,7 @@ def float_parameter(level, maxval):
   #return float(level) * maxval / PARAMETER_MAX
   return (level * maxval / PARAMETER_MAX)#.to(torch.float32)
 
-def int_parameter(level, maxval):
+def int_parameter(level, maxval): #Perte de gradient
   """Helper function to scale `val` between 0 and maxval .
   Args:
     level: Level of the operation that will be between [0, `PARAMETER_MAX`].
@@ -132,10 +110,7 @@ def int_parameter(level, maxval):
     An int that results from scaling `maxval` according to `level`.
   """
   #return int(level * maxval / PARAMETER_MAX)
-  print(level)
-  res= (level * maxval / PARAMETER_MAX).to(torch.int8).requires_grad_()#.type(torch.int8)
-  print(res)
-  return res
+  return (level * maxval / PARAMETER_MAX) 
 
 def flipLR(x):
     device = x.device
@@ -160,11 +135,11 @@ def flipUD(x):
     return kornia.warp_perspective(x, M, dsize=(h, w))
 
 def rotate(x, angle):
-  return kornia.rotate(x, angle=angle)#.type(torch.float32)) #Kornia ne supporte pas les int
+  return kornia.rotate(x, angle=angle.type(torch.float32)) #Kornia ne supporte pas les int
 
 def translate(x, translation):
   #print(translation)
-  return kornia.translate(x, translation=translation)#.type(torch.float32)) #Kornia ne supporte pas les int
+  return kornia.translate(x, translation=translation.type(torch.float32)) #Kornia ne supporte pas les int
 
 def shear(x, shear):
   return kornia.shear(x, shear=shear)
