@@ -170,7 +170,7 @@ def viz_sample_data(imgs, labels, fig_name='data_sample'):
         plt.xticks([])
         plt.yticks([])
         plt.grid(False)
-        plt.imshow(sample[i,], cmap=plt.cm.binary)
+        plt.imshow(sample[i,].detach().numpy(), cmap=plt.cm.binary)
         plt.xlabel(labels[i].item())
 
     plt.savefig(fig_name)

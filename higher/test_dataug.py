@@ -5,9 +5,9 @@ from train_utils import *
 
 tf_names = [
     ## Geometric TF ##
-    'Identity',
-    'FlipUD',
-    'FlipLR',
+    #'Identity',
+    #'FlipUD',
+    #'FlipLR',
     'Rotate',
     'TranslateX',
     'TranslateY',
@@ -37,7 +37,7 @@ else:
 ##########################################
 if __name__ == "__main__":
 
-    n_inner_iter = 10
+    n_inner_iter = 1
     epochs = 2
     dataug_epoch_start=0
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     t0 = time.process_time()
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     #tf_dict = TF.TF_dict
-    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.5), LeNet(3,10)).to(device)
+    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=1, mix_dist=0.5, glob_mag=False), LeNet(3,10)).to(device)
     #aug_model = Augmented_model(Data_augV4(TF_dict=tf_dict, N_TF=2, mix_dist=0.0), WideResNet(num_classes=10, wrn_size=160)).to(device)
     print(str(aug_model), 'on', device_name)
     #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)

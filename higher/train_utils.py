@@ -623,8 +623,8 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
 
         tf = time.process_time()
 
-        #viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_epoch{}_noTF'.format(epoch))
-        #viz_sample_data(imgs=aug_model['data_aug'](xs), labels=ys, fig_name='samples/data_sample_epoch{}'.format(epoch))
+        viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_epoch{}_noTF'.format(epoch))
+        viz_sample_data(imgs=model['data_aug'](xs), labels=ys, fig_name='samples/data_sample_epoch{}'.format(epoch))
         
         if(not high_grad_track): 
             countcopy+=1
@@ -648,8 +648,9 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
             print('Accuracy :', accuracy)
             print('Data Augmention : {} (Epoch {})'.format(model._data_augmentation, dataug_epoch_start))
             print('TF Proba :', model['data_aug']['prob'].data)
-            #print('proba grad',aug_model['data_aug']['prob'].grad)
+            #print('proba grad',model['data_aug']['prob'].grad)
             print('TF Mag :', model['data_aug']['mag'].data)
+            print('Mag grad',model['data_aug']['mag'].grad)
         #############
         #### Log ####
         data={
