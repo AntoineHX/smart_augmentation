@@ -5,9 +5,9 @@ from train_utils import *
 
 tf_names = [
     ## Geometric TF ##
-    #'Identity',
-    #'FlipUD',
-    #'FlipLR',
+    'Identity',
+    'FlipUD',
+    'FlipLR',
     'Rotate',
     'TranslateX',
     'TranslateY',
@@ -37,8 +37,8 @@ else:
 ##########################################
 if __name__ == "__main__":
 
-    n_inner_iter = 1
-    epochs = 2
+    n_inner_iter = 10
+    epochs = 200
     dataug_epoch_start=0
 
     #### Classic ####
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     print('-'*9)
     times = [x["time"] for x in log]
     out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times)), "Device": device_name, "Log": log}
-    print(str(model),": acc", out["Accuracy"], "in (ms):", out["Time"][0], "+/-", out["Time"][1])
+    print(str(model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
     with open("res/log/%s.json" % "{}-{} epochs".format(str(model),epochs), "w+") as f:
         json.dump(out, f, indent=True)
         print('Log :\"',f.name, '\" saved !')
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     t0 = time.process_time()
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     #tf_dict = TF.TF_dict
-    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=1, mix_dist=0.5, fixed_mag=False, shared_mag=True), LeNet(3,10)).to(device)
+    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.5, fixed_mag=False, shared_mag=False), LeNet(3,10)).to(device)
     #aug_model = Augmented_model(Data_augV4(TF_dict=tf_dict, N_TF=2, mix_dist=0.0), WideResNet(num_classes=10, wrn_size=160)).to(device)
     print(str(aug_model), 'on', device_name)
     #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
@@ -79,12 +79,13 @@ if __name__ == "__main__":
     print('-'*9)
     times = [x["time"] for x in log]
     out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times)), "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
-    print(str(aug_model),": acc", out["Accuracy"], "in (s?):", out["Time"][0], "+/-", out["Time"][1])
+    print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
     with open("res/log/%s.json" % "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter), "w+") as f:
         json.dump(out, f, indent=True)
         print('Log :\"',f.name, '\" saved !')
 
-    print('Execution Time : %.00f (s?)'%(time.process_time() - t0))
+    print('TF influence', TF_influence(log))
+    print('Execution Time : %.00f '%(time.process_time() - t0))
     print('-'*9)
     #'''
     #### TF number tests ####
