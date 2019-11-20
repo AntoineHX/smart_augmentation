@@ -38,7 +38,7 @@ else:
 if __name__ == "__main__":
 
     n_inner_iter = 10
-    epochs = 2
+    epochs = 200
     dataug_epoch_start=0
 
     #### Classic ####
@@ -64,39 +64,43 @@ if __name__ == "__main__":
     print('-'*9)
     '''
     #### Augmented Model ####
-    #'''
+    '''
     t0 = time.process_time()
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     #tf_dict = TF.TF_dict
-    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.5, fixed_mag=False, shared_mag=False), LeNet(3,10)).to(device)
+    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.5, fixed_mag=False, shared_mag=True), LeNet(3,10)).to(device)
     #aug_model = Augmented_model(Data_augV4(TF_dict=tf_dict, N_TF=2, mix_dist=0.0), WideResNet(num_classes=10, wrn_size=160)).to(device)
     print(str(aug_model), 'on', device_name)
     #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
     log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=1, loss_patience=10)
 
     ####
-    plot_resV2(log, fig_name="res/{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter), param_names=tf_names)
     print('-'*9)
     times = [x["time"] for x in log]
     out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times)), "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
     print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-    with open("res/log/%s.json" % "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter), "w+") as f:
+    filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)
+    with open("res/log/%s.json" % filename, "w+") as f:
         json.dump(out, f, indent=True)
         print('Log :\"',f.name, '\" saved !')
 
-    plot_TF_influence(log, param_names=tf_names)
+    plot_resV2(log, fig_name="res/"+filename, param_names=tf_names)
+
     print('Execution Time : %.00f '%(time.process_time() - t0))
     print('-'*9)
-    #'''
-    #### TF number tests ####
     '''
-    res_folder="res/TF_nb_tests/"
-    epochs= 100
+    #### TF tests ####
+    #'''
+    res_folder="res/brutus-tests/"
+    epochs= 150
     inner_its = [0, 1, 10]
     dist_mix = [0.0, 0.5]
     dataug_epoch_starts= [0]
-    TF_nb = [len(TF.TF_dict)] #range(10,len(TF.TF_dict)+1) #[len(TF.TF_dict)]
-    N_seq_TF= [2, 3, 4, 6]
+    tf_dict = {k: TF.TF_dict[k] for k in tf_names}
+    TF_nb = [len(tf_dict)] #range(10,len(TF.TF_dict)+1) #[len(TF.TF_dict)]
+    N_seq_TF= [1,2,3,4]#[2, 3, 4, 6]
+    mag_setup = [(True,True), (False,True), (False, False)]
+    nb_run= 3
     
     try:
         os.mkdir(res_folder)
@@ -105,28 +109,31 @@ if __name__ == "__main__":
         pass
 
     for n_inner_iter in inner_its:
-        print("---Starting inner_it", n_inner_iter,"---")
         for dataug_epoch_start in dataug_epoch_starts:
-            print("---Starting dataug", dataug_epoch_start,"---")
             for n_tf in N_seq_TF:
-                for i in TF_nb:
-                    keys = list(TF.TF_dict.keys())[0:i]
-                    ntf_dict = {k: TF.TF_dict[k] for k in keys}
+                for dist in dist_mix:
+                    #for i in TF_nb:
+                    for m_setup in mag_setup:
+                        for run in range(nb_run):
+                            #keys = list(TF.TF_dict.keys())[0:i]
+                            #ntf_dict = {k: TF.TF_dict[k] for k in keys}
 
-                    aug_model = Augmented_model(Data_augV4(TF_dict=ntf_dict, N_TF=n_tf, mix_dist=0.0), LeNet(3,10)).to(device)
-                    print(str(aug_model), 'on', device_name)
-                    #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
-                    log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=10, loss_patience=None)
+                            aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=n_tf, mix_dist=dist, fixed_mag=m_setup[0], shared_mag=m_setup[1]), LeNet(3,10)).to(device)
+                            print(str(aug_model), 'on', device_name)
+                            #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
+                            log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=20, loss_patience=None)
 
-                    ####
-                    plot_res(log, fig_name=res_folder+"{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter), param_names=keys)
-                    print('-'*9)
-                    times = [x["time"] for x in log]
-                    out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times)), "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
-                    print(str(aug_model),": acc", out["Accuracy"], "in (s?):", out["Time"][0], "+/-", out["Time"][1])
-                    with open(res_folder+"log/%s.json" % "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter), "w+") as f:
-                        json.dump(out, f, indent=True)
-                        print('Log :\"',f.name, '\" saved !')
-                    print('-'*9)
+                            ####
+                            print('-'*9)
+                            times = [x["time"] for x in log]
+                            out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times)), "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
+                            print(str(aug_model),": acc", out["Accuracy"], "in (s?):", out["Time"][0], "+/-", out["Time"][1])
+                            filename = "{}-{}epochs(dataug:{})-{}in_it-{}".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter,run)
+                            with open(res_folder+"log/%s.json" % filename, "w+") as f:
+                                json.dump(out, f, indent=True)
+                                print('Log :\"',f.name, '\" saved !')
 
-    '''    
+                            #plot_resV2(log, fig_name=res_folder+filename, param_names=tf_names)
+                            print('-'*9)
+
+    #'''    

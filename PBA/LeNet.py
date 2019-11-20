@@ -31,7 +31,7 @@ def LeNet(images, num_classes):
      n_n_fc2 = 500; # number of neurons of first fully connected layer (default = 576)
 
      # 1.layer: convolution + max pooling
-     W_conv1_tf = weight_variable([s_f_conv1, s_f_conv1, 1, n_f_conv1], name = 'W_conv1_tf') # (5,5,1,32)
+     W_conv1_tf = weight_variable([s_f_conv1, s_f_conv1, images.shape[3], n_f_conv1], name = 'W_conv1_tf') # (5,5,1,32)
      b_conv1_tf = bias_variable([n_f_conv1], name = 'b_conv1_tf') # (32)
      h_conv1_tf = tf.nn.relu(conv2d(images, 
                                                  W_conv1_tf) + b_conv1_tf, 

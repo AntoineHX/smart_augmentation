@@ -2,9 +2,10 @@ from utils import *
 
 if __name__ == "__main__":
 
-    '''
+    #'''
     files=[
-        "res/log/Aug_mod(Data_augV5(Mix0.5-11TFx1-MagSh)-LeNet)-2 epochs (dataug:0)- 1 in_it.json",
+        "res/good_TF_tests/log/Aug_mod(Data_augV5(Mix0.5-14TFx2-MagFxSh)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
+        "res/good_TF_tests/log/Aug_mod(Data_augV5(Uniform-14TFx2-MagFxSh)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
     ]
 
     for idx, file in enumerate(files):
@@ -12,10 +13,12 @@ if __name__ == "__main__":
         with open(file) as json_file:
             data = json.load(json_file)
             plot_resV2(data['Log'], fig_name=file.replace('.json','').replace('log/',''), param_names=data['Param_names'])
-    '''
+            #plot_TF_influence(data['Log'], param_names=data['Param_names'])
+    #'''
     ## Loss , Acc, Proba = f(epoch) ##
     #plot_compare(filenames=files, fig_name="res/compare")
 
+    '''
     ## Acc, Time, Epochs = f(n_tf) ##
     #fig_name="res/TF_nb_tests_compare"
     fig_name="res/TF_seq_tests_compare"
@@ -68,3 +71,4 @@ if __name__ == "__main__":
     fig_name = fig_name.replace('.',',')
     plt.savefig(fig_name, bbox_inches='tight')
     plt.close()
+    '''
