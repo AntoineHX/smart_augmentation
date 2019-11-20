@@ -52,6 +52,9 @@ TF_dict={ #Dataugv5
   #'Equalize': (lambda mag: None),
 }
 
+TF_no_mag={'Identity', 'FlipUD', 'FlipLR'}
+TF_ignore_mag= TF_no_mag | {'Solarize', 'Posterize'}
+
 def int_image(float_image): #ATTENTION : legere perte d'info (granularite : 1/256 = 0.0039)
   return (float_image*255.).type(torch.uint8)
 

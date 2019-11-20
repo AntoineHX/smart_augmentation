@@ -552,6 +552,8 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
                             else torch.tensor(0.5).expand(self._nb_tf)), #[0, PARAMETER_MAX]
         })
 
+        #for t in TF.TF_no_mag: self._params['mag'][self._TF.index(t)].data-=self._params['mag'][self._TF.index(t)].data #Mag inutile pour les TF ignore_mag
+
         #Distribution
         self._samples = []
         self._mix_dist = False
@@ -561,8 +563,7 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
 
         #Mag regularisation
         if not self._fixed_mag:
-            ignore={'Identity', 'FlipUD', 'FlipLR', 'Solarize', 'Posterize'}
-            self._reg_mask=[self._TF.index(t) for t in self._TF if t not in ignore]
+            self._reg_mask=[self._TF.index(t) for t in self._TF if t not in TF.TF_ignore_mag]
             self._reg_tgt = torch.full(size=(len(self._reg_mask),), fill_value=TF.PARAMETER_MAX) #Encourage amplitude max
 
     def forward(self, x):

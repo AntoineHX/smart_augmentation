@@ -38,7 +38,7 @@ else:
 if __name__ == "__main__":
 
     n_inner_iter = 10
-    epochs = 200
+    epochs = 2
     dataug_epoch_start=0
 
     #### Classic ####
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         json.dump(out, f, indent=True)
         print('Log :\"',f.name, '\" saved !')
 
-    print('TF influence', TF_influence(log))
+    plot_TF_influence(log, param_names=tf_names)
     print('Execution Time : %.00f '%(time.process_time() - t0))
     print('-'*9)
     #'''
