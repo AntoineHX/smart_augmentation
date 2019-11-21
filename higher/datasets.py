@@ -39,8 +39,9 @@ data_test = torchvision.datasets.CIFAR10(
 )
 #'''
 train_subset_indices=range(int(len(data_train)/2))
-#train_subset_indices=range(BATCH_SIZE*10)
 val_subset_indices=range(int(len(data_train)/2),len(data_train))
+#train_subset_indices=range(BATCH_SIZE*10)
+#val_subset_indices=range(BATCH_SIZE*10, BATCH_SIZE*20)
 
 dl_train = torch.utils.data.DataLoader(data_train, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(train_subset_indices))
 dl_val = torch.utils.data.DataLoader(data_train, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(val_subset_indices))
