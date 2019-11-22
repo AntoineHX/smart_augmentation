@@ -105,7 +105,7 @@ if __name__ == "__main__":
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     TF_nb = [len(tf_dict)] #range(10,len(TF.TF_dict)+1) #[len(TF.TF_dict)]
     N_seq_TF= [1, 2, 3, 4]
-    mag_setup = [(True,True), (False,True), (False, False)]
+    mag_setup = [(True,True), (False, False)]
     nb_run= 3
     
     try:
