@@ -6,13 +6,19 @@ from train_utils import *
 tf_names = [
     ## Geometric TF ##
     'Identity',
-    #'FlipUD',
+    'FlipUD',
     'FlipLR',
     'Rotate',
-    #'TranslateX',
-    #'TranslateY',
+    'TranslateX',
+    'TranslateY',
     'ShearX',
     'ShearY',
+
+    #'BRotate',
+    #'BTranslateX',
+    #'BTranslateY',
+    #'BShearX',
+    #'BShearY',
 
     ## Color TF (Expect image in the range of [0, 1]) ##
     'Contrast',
@@ -20,7 +26,7 @@ tf_names = [
     'Brightness',
     'Sharpness',
     'Posterize',
-    #'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
+    'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
 
     #Non fonctionnel
     #'Auto_Contrast', #Pas opti pour des batch (Super lent)
@@ -37,7 +43,7 @@ else:
 ##########################################
 if __name__ == "__main__":
 
-    n_inner_iter = 0
+    n_inner_iter = 10
     epochs = 100
     dataug_epoch_start=0
 
@@ -68,11 +74,11 @@ if __name__ == "__main__":
     t0 = time.process_time()
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     #tf_dict = TF.TF_dict
-    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.5, fixed_mag=True, shared_mag=True), LeNet(3,10)).to(device)
+    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=1, mix_dist=0.0, fixed_mag=False, shared_mag=False), LeNet(3,10)).to(device)
     #aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.5, fixed_mag=True, shared_mag=True), WideResNet(num_classes=10, wrn_size=160)).to(device)
     print(str(aug_model), 'on', device_name)
     #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
-    log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=10, loss_patience=None)
+    log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=1, loss_patience=None)
 
     ####
     print('-'*9)
@@ -91,16 +97,16 @@ if __name__ == "__main__":
     '''
     #### TF tests ####
     #'''
-    res_folder="res/good_TF_tests/"
-    epochs= 100
-    inner_its = [0, 10]
-    dist_mix = [0.0, 0.5]
+    res_folder="res/brutus-tests/"
+    epochs= 150
+    inner_its = [0, 1, 10]
+    dist_mix = [0.0, 0.5, 1]
     dataug_epoch_starts= [0]
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     TF_nb = [len(tf_dict)] #range(10,len(TF.TF_dict)+1) #[len(TF.TF_dict)]
-    N_seq_TF= [1]#[1, 2, 3, 4]
-    mag_setup = [(True,True)]#[(True,True), (False,True), (False, False)]
-    nb_run= 1
+    N_seq_TF= [1, 2, 3, 4]
+    mag_setup = [(True,True), (False,True), (False, False)]
+    nb_run= 3
     
     try:
         os.mkdir(res_folder)

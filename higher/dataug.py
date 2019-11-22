@@ -548,8 +548,8 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
         #self._fixed_mag=5 #[0, PARAMETER_MAX]
         self._params = nn.ParameterDict({
             "prob": nn.Parameter(torch.ones(self._nb_tf)/self._nb_tf), #Distribution prob uniforme
-            "mag" : nn.Parameter(torch.tensor(0.5) if self._shared_mag
-                            else torch.tensor(0.5).expand(self._nb_tf)), #[0, PARAMETER_MAX]
+            "mag" : nn.Parameter(torch.tensor(float(TF.PARAMETER_MAX)) if self._shared_mag
+                            else torch.tensor(float(TF.PARAMETER_MAX)).expand(self._nb_tf)), #[0, PARAMETER_MAX]
         })
 
         #for t in TF.TF_no_mag: self._params['mag'][self._TF.index(t)].data-=self._params['mag'][self._TF.index(t)].data #Mag inutile pour les TF ignore_mag
@@ -631,7 +631,7 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
             self._params['prob'].data = self._params['prob']/sum(self._params['prob']) #Contrainte sum(p)=1
 
         #self._params['mag'].data = self._params['mag'].data.clamp(min=0.0,max=TF.PARAMETER_MAX) #Bloque une fois au extreme
-        self._params['mag'].data = F.relu(self._params['mag'].data) - F.relu(self._params['mag'].data - TF.PARAMETER_MAX) #Bloque a PARAMETER_MAX
+        self._params['mag'].data = F.relu(self._params['mag'].data) - F.relu(self._params['mag'].data - TF.PARAMETER_MAX)
 
     def loss_weight(self):
         # 1 seule TF
