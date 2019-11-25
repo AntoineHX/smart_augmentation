@@ -19,6 +19,10 @@ tf_names = [
     #'BTranslateY',
     #'BShearX',
     #'BShearY',
+    #'BadTranslateX',
+    #'BadTranslateX_neg',
+    #'BadTranslateY',
+    #'BadTranslateY_neg',
 
     ## Color TF (Expect image in the range of [0, 1]) ##
     'Contrast',
@@ -74,11 +78,11 @@ if __name__ == "__main__":
     t0 = time.process_time()
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     #tf_dict = TF.TF_dict
-    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=1, mix_dist=0.0, fixed_mag=False, shared_mag=False), LeNet(3,10)).to(device)
+    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, fixed_mag=True, shared_mag=True), LeNet(3,10)).to(device)
     #aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.5, fixed_mag=True, shared_mag=True), WideResNet(num_classes=10, wrn_size=160)).to(device)
     print(str(aug_model), 'on', device_name)
     #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
-    log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=1, loss_patience=None)
+    log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=10, loss_patience=None)
 
     ####
     print('-'*9)
@@ -99,7 +103,7 @@ if __name__ == "__main__":
     #'''
     res_folder="res/brutus-tests/"
     epochs= 150
-    inner_its = [0, 1, 10]
+    inner_its = [1, 10]
     dist_mix = [0.0, 0.5, 1]
     dataug_epoch_starts= [0]
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
