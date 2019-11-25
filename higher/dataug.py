@@ -572,7 +572,7 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
 
     def forward(self, x):
         self._samples = []
-        if self._data_augmentation and TF.random.random() < 0.5:
+        if self._data_augmentation:# and TF.random.random() < 0.5:
             device = x.device
             batch_size, h, w = x.shape[0], x.shape[2], x.shape[3]
 
@@ -688,7 +688,7 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
         if self._fixed_mag: mag_param+= 'Fx'
         if self._shared_mag: mag_param+= 'Sh'
         if not self._mix_dist:
-            return "Data_augV5(Uniform%s-%dTFx%d-%s)rand0.5" % (dist_param, self._nb_tf, self._N_seqTF, mag_param)
+            return "Data_augV5(Uniform%s-%dTFx%d-%s)" % (dist_param, self._nb_tf, self._N_seqTF, mag_param)
         else:
             return "Data_augV5(Mix%.1f%s-%dTFx%d-%s)" % (self._mix_factor,dist_param, self._nb_tf, self._N_seqTF, mag_param)
 
