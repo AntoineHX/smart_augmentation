@@ -651,7 +651,7 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
             print('TF Proba :', model['data_aug']['prob'].data)
             #print('proba grad',model['data_aug']['prob'].grad)
             print('TF Mag :', model['data_aug']['mag'].data)
-            #print('Mag grad',model['data_aug']['mag'].grad)
+            print('Mag grad',model['data_aug']['mag'].grad)
             #print('Reg loss:', model['data_aug'].reg_loss().item())
         #############
         #### Log ####

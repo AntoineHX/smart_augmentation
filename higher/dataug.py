@@ -692,7 +692,7 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
         else:
             return "Data_augV5(Mix%.1f%s-%dTFx%d-%s)" % (self._mix_factor,dist_param, self._nb_tf, self._N_seqTF, mag_param)
 
-class RandAug(nn.Module): #RandAugment = UniformFx-MagFxSh
+class RandAug(nn.Module): #RandAugment = UniformFx-MagFxSh + rapide
     def __init__(self, TF_dict=TF.TF_dict, N_TF=1, mag=TF.PARAMETER_MAX):
         super(RandAug, self).__init__()
 
@@ -773,9 +773,9 @@ class RandAug(nn.Module): #RandAugment = UniformFx-MagFxSh
     def __str__(self):
         return "RandAug(%dTFx%d-Mag%d)" % (self._nb_tf, self._N_seqTF, self.mag)
 
-class RandAugUDA(nn.Module): #RandAugment = UniformFx-MagFxSh
+class RandAugUDA(nn.Module): #RandAugment from UDA (for DA during training)
     def __init__(self, TF_dict=TF.TF_dict, N_TF=1, mag=TF.PARAMETER_MAX):
-        super(RandAug, self).__init__()
+        super(RandAugUDA, self).__init__()
 
         self._data_augmentation = True
 
@@ -786,7 +786,7 @@ class RandAugUDA(nn.Module): #RandAugment = UniformFx-MagFxSh
 
         self.mag=nn.Parameter(torch.tensor(float(mag)))
         self._params = nn.ParameterDict({
-            "prob": nn.Parameter(torch.tensor(0.5)),
+            "prob": nn.Parameter(torch.tensor(0.5).unsqueeze(dim=0)),
             "mag" : nn.Parameter(torch.tensor(float(TF.PARAMETER_MAX))),
         })
         self._shared_mag = True
@@ -794,11 +794,9 @@ class RandAugUDA(nn.Module): #RandAugment = UniformFx-MagFxSh
 
         self._op_list =[]
         for tf in self._TF:
-            for mag in range(0.1, self._params['mag'], 0.1):
-                op_list+=[(tf, self._params['prob'], mag)]
+            for mag in range(1, int(self._params['mag']*10), 1):
+                self._op_list+=[(tf, self._params['prob'].item(), mag/10)]
         self._nb_op = len(self._op_list)
-
-        print(self._op_list)
 
     def forward(self, x):
         if self._data_augmentation:# and TF.random.random() < 0.5:
@@ -821,16 +819,16 @@ class RandAugUDA(nn.Module): #RandAugment = UniformFx-MagFxSh
         smps_x=[]
         
         for op_idx in range(self._nb_op):
-            mask = sampled_TF==tf_idx #Create selection mask
+            mask = sampled_TF==op_idx #Create selection mask
             smp_x = x[mask] #torch.masked_select() ? (Necessite d'expand le mask au meme dim)
 
             if smp_x.shape[0]!=0: #if there's data to TF
-                if TF.random.random() < self.op_list[op_idx][1]:
-                    magnitude=self.op_list[op_idx][2]
-                    tf=self.op_list[op_idx][0]
+                if TF.random.random() < self._op_list[op_idx][1]:
+                    magnitude=self._op_list[op_idx][2]
+                    tf=self._op_list[op_idx][0]
 
                     #In place
-                    x[mask]=self._TF_dict[tf](x=smp_x, mag=magnitude)
+                    x[mask]=self._TF_dict[tf](x=smp_x, mag=torch.tensor(magnitude, device=x.device))
    
         return x
 
@@ -847,7 +845,7 @@ class RandAugUDA(nn.Module): #RandAugment = UniformFx-MagFxSh
         if mode is None :
             mode=self._data_augmentation
         self.augment(mode=mode) #Inutile si mode=None
-        super(RandAug, self).train(mode)
+        super(RandAugUDA, self).train(mode)
 
     def eval(self):
         self.train(mode=False)
@@ -859,7 +857,7 @@ class RandAugUDA(nn.Module): #RandAugment = UniformFx-MagFxSh
         return self._params[key]
 
     def __str__(self):
-        return "RandAug(%dTFx%d-Mag%d)" % (self._nb_tf, self._N_seqTF, self.mag)
+        return "RandAugUDA(%dTFx%d-Mag%d)" % (self._nb_tf, self._N_seqTF, self.mag)
 
 class Augmented_model(nn.Module):
     def __init__(self, data_augmenter, model):
