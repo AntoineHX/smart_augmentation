@@ -74,7 +74,7 @@ if __name__ == "__main__":
     print('-'*9)
     '''
     #### Augmented Model ####
-    #'''
+    '''
     t0 = time.process_time()
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     #tf_dict = TF.TF_dict
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     print('Execution Time : %.00f '%(time.process_time() - t0))
     print('-'*9)
-    #'''
+    '''
     #### TF tests ####
     #'''
     res_folder="res/brutus-tests/"
