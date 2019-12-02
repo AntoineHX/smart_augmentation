@@ -10,17 +10,17 @@ tf_names = [
     'FlipLR',
     'Rotate',
     'TranslateX',
-    'TranslateY',
-    'ShearX',
-    'ShearY',
+    #'TranslateY',
+    #'ShearX',
+    #'ShearY',
 
     ## Color TF (Expect image in the range of [0, 1]) ##
-    'Contrast',
-    'Color',
-    'Brightness',
-    'Sharpness',
-    'Posterize',
-    'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
+    #'Contrast',
+    #'Color',
+    #'Brightness',
+    #'Sharpness',
+    #'Posterize',
+    #'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
 
     #Color TF (Common mag scale)
     #'+Contrast',
@@ -44,10 +44,10 @@ tf_names = [
     #'BadTranslateY',
     #'BadTranslateY_neg',
 
-    'BadColor',
-    'BadSharpness',
-    'BadContrast',
-    'BadBrightness',
+    #'BadColor',
+    #'BadSharpness',
+    #'BadContrast',
+    #'BadBrightness',
 
     #Non fonctionnel
     #'Auto_Contrast', #Pas opti pour des batch (Super lent)
@@ -91,11 +91,11 @@ if __name__ == "__main__":
     print('-'*9)
     '''
     #### Augmented Model ####
-    '''
+    #'''
     t0 = time.process_time()
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     #tf_dict = TF.TF_dict
-    aug_model = Augmented_model(Data_augV6(TF_dict=tf_dict, N_TF=3, mix_dist=0.0, fixed_prob=False, fixed_mag=True, shared_mag=True), LeNet(3,10)).to(device)
+    aug_model = Augmented_model(Data_augV6(TF_dict=tf_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, fixed_mag=True, shared_mag=True), LeNet(3,10)).to(device)
     #aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.5, fixed_mag=True, shared_mag=True), WideResNet(num_classes=10, wrn_size=160)).to(device)
     #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), LeNet(3,10)).to(device)
     print(str(aug_model), 'on', device_name)
@@ -116,9 +116,9 @@ if __name__ == "__main__":
 
     print('Execution Time : %.00f '%(time.process_time() - t0))
     print('-'*9)
-    '''
-    #### TF tests ####
     #'''
+    #### TF tests ####
+    '''
     res_folder="res/brutus-tests/"
     epochs= 150
     inner_its = [1]
@@ -168,4 +168,4 @@ if __name__ == "__main__":
                             #plot_resV2(log, fig_name=res_folder+filename, param_names=tf_names)
                             print('-'*9)
 
-    #'''    
+    '''    

@@ -709,17 +709,38 @@ class Data_augV6(nn.Module): #Optimisation sequentielle
         self._fixed_mag = fixed_mag
         
         self._TF_set_size=3
-        #if self._TF_set_size>self._nb_tf:
-        #    print("Warning : TF sets size higher than number of TF. Reducing set size to %d"%self._nb_tf)
-        #    self._TF_set_size=self._nb_tf
-        assert self._nb_tf>=self._TF_set_size
-        self._TF_sets=[]
-        for i in range(1,self._nb_tf):
-            for j in range(i,self._nb_tf):
-                if i!=j:
-                    self._TF_sets+=[torch.tensor([0, i, j])]
-        #print(self._TF_sets)
-        #self._TF_sets=[torch.tensor([0, i, j]) for i in range(1,self._nb_tf)] #All VS Identity
+        self._fixed_TF=[0]
+        assert self._TF_set_size>=len(self._fixed_TF)
+
+        if self._TF_set_size>self._nb_tf:
+            print("Warning : TF sets size higher than number of TF. Reducing set size to %d"%self._nb_tf)
+            self._TF_set_size=self._nb_tf
+        
+        ## Genenerate TF sets ##
+        if self._TF_set_size==len(self._fixed_TF): 
+            print("Warning : using only fixed set of TF : ", self._fixed_TF)
+            self._TF_sets=torch.tensor([self._fixed_TF])
+        else: 
+            def generate_TF_sets(n_TF, set_size, idx_prefix=[]):
+                TF_sets=[]
+                print(set_size, idx_prefix)
+                if len(idx_prefix)!=0:
+                    if set_size>2:
+                        for i in range(idx_prefix[-1]+1, n_TF):
+                            TF_sets += generate_TF_sets(n_TF=n_TF, set_size=set_size-1, idx_prefix=idx_prefix+[i])
+                    else:
+                        #if i not in idx_prefix:
+                        TF_sets+=[torch.tensor(idx_prefix+[i]) for i in range(idx_prefix[-1]+1, n_TF)]
+                elif set_size>1:
+                     for i in range(0, n_TF):
+                        TF_sets += generate_TF_sets(n_TF=n_TF, set_size=set_size, idx_prefix=[i])
+                else:
+                    TF_sets+=[torch.tensor([i]) for i in range(0, n_TF)]
+                return TF_sets
+
+            self._TF_sets=generate_TF_sets(self._nb_tf, self._TF_set_size, self._fixed_TF)
+        
+        ## Plan TF learning schedule ##
         self._TF_schedule = [list(range(len(self._TF_sets))) for _ in range(self._N_seqTF)]
         for n_tf in range(self._N_seqTF) :
             TF.random.shuffle(self._TF_schedule[n_tf])
