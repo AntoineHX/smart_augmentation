@@ -540,6 +540,7 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
     val_loss=torch.tensor(0) #Necessaire si pas de metastep sur une epoch
     dl_val_it = iter(dl_val)
 
+    #if inner_it!=0: 
     meta_opt = torch.optim.Adam(model['data_aug'].parameters(), lr=1e-2)
     inner_opt = torch.optim.SGD(model['model'].parameters(), lr=1e-2, momentum=0.9)
 
@@ -650,7 +651,7 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
             print('TF Proba :', model['data_aug']['prob'].data)
             #print('proba grad',model['data_aug']['prob'].grad)
             print('TF Mag :', model['data_aug']['mag'].data)
-            #print('Mag grad',model['data_aug']['mag'].grad)
+            print('Mag grad',model['data_aug']['mag'].grad)
             #print('Reg loss:', model['data_aug'].reg_loss().item())
         #############
         #### Log ####
@@ -679,6 +680,9 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
             dataug_epoch_start = epoch
             model.augment(mode=True)
             if inner_it != 0: high_grad_track = True
+
+    viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_epoch{}_noTF'.format(epoch))
+    viz_sample_data(imgs=model['data_aug'](xs), labels=ys, fig_name='samples/data_sample_epoch{}'.format(epoch))
 
     #print("Copy ", countcopy)
     return log
