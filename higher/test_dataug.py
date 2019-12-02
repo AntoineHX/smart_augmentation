@@ -91,7 +91,7 @@ if __name__ == "__main__":
     print('-'*9)
     '''
     #### Augmented Model ####
-    #'''
+    '''
     t0 = time.process_time()
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     #tf_dict = TF.TF_dict
@@ -116,17 +116,17 @@ if __name__ == "__main__":
 
     print('Execution Time : %.00f '%(time.process_time() - t0))
     print('-'*9)
-    #'''
-    #### TF tests ####
     '''
+    #### TF tests ####
+    #'''
     res_folder="res/brutus-tests/"
     epochs= 150
-    inner_its = [1, 10]
-    dist_mix = [0.0, 0.5, 1]
+    inner_its = [1]
+    dist_mix = [1]
     dataug_epoch_starts= [0]
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     TF_nb = [len(tf_dict)] #range(10,len(TF.TF_dict)+1) #[len(TF.TF_dict)]
-    N_seq_TF= [1, 2, 3, 4]
+    N_seq_TF= [2, 3, 4]
     mag_setup = [(True,True), (False, False)]
     #prob_setup = [True, False]
     nb_run= 3
@@ -146,7 +146,7 @@ if __name__ == "__main__":
                         #for p_setup in prob_setup:
                         for run in range(nb_run):
                             if n_inner_iter == 0 and (m_setup!=(True,True) or p_setup!=True): continue #Autres setup inutiles sans meta-opti
-                            if n_inner_iter ==1 and (n_tf==1 or n_tf==2): continue #Deja resultats
+                            if n_tf ==2 and m_setup==(True,True): continue #Deja resultats
                             #keys = list(TF.TF_dict.keys())[0:i]
                             #ntf_dict = {k: TF.TF_dict[k] for k in keys}
 
@@ -168,4 +168,4 @@ if __name__ == "__main__":
                             #plot_resV2(log, fig_name=res_folder+filename, param_names=tf_names)
                             print('-'*9)
 
-    '''    
+    #'''    
