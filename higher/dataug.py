@@ -694,7 +694,7 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
 
 import numpy as np
 class Data_augV6(nn.Module): #Optimisation sequentielle
-    def __init__(self, TF_dict=TF.TF_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, fixed_mag=True, shared_mag=True):
+    def __init__(self, TF_dict=TF.TF_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, prob_set_size=None, fixed_mag=True, shared_mag=True):
         super(Data_augV6, self).__init__()
         assert len(TF_dict)>0
         
@@ -708,8 +708,9 @@ class Data_augV6(nn.Module): #Optimisation sequentielle
         self._shared_mag = shared_mag
         self._fixed_mag = fixed_mag
         
-        self._TF_set_size=3
-        self._fixed_TF=[0]
+        self._TF_set_size = prob_set_size if prob_set_size else self._nb_tf
+        
+        self._fixed_TF=[0] #Identite
         assert self._TF_set_size>=len(self._fixed_TF)
 
         if self._TF_set_size>self._nb_tf:
@@ -723,7 +724,6 @@ class Data_augV6(nn.Module): #Optimisation sequentielle
         else: 
             def generate_TF_sets(n_TF, set_size, idx_prefix=[]):
                 TF_sets=[]
-                print(set_size, idx_prefix)
                 if len(idx_prefix)!=0:
                     if set_size>2:
                         for i in range(idx_prefix[-1]+1, n_TF):
@@ -739,12 +739,12 @@ class Data_augV6(nn.Module): #Optimisation sequentielle
                 return TF_sets
 
             self._TF_sets=generate_TF_sets(self._nb_tf, self._TF_set_size, self._fixed_TF)
-        
+
         ## Plan TF learning schedule ##
         self._TF_schedule = [list(range(len(self._TF_sets))) for _ in range(self._N_seqTF)]
         for n_tf in range(self._N_seqTF) :
             TF.random.shuffle(self._TF_schedule[n_tf])
-        #print(self._TF_schedule)
+
         self._current_TF_idx=0 #random.randint
         self._start_prob = 1/self._TF_set_size
 
@@ -881,12 +881,11 @@ class Data_augV6(nn.Module): #Optimisation sequentielle
             self._current_TF_idx=idx
         else:
             self._current_TF_idx+=1
-            if self._current_TF_idx== len(self._TF_schedule[0]): 
-                self._current_TF_idx=0
-                #for n_tf in range(self._N_seqTF) :
-                #    TF.random.shuffle(self._TF_schedule[n_tf])
-                #print(self._TF_schedule)
-        #print("Current TF :",self._TF_sets[self._current_TF_idx])
+
+        if self._current_TF_idx>=len(self._TF_schedule[0]): 
+            self._current_TF_idx=0
+            for n_tf in range(self._N_seqTF) :
+                TF.random.shuffle(self._TF_schedule[n_tf])
 
     def train(self, mode=None):
         if mode is None :

@@ -10,17 +10,17 @@ tf_names = [
     'FlipLR',
     'Rotate',
     'TranslateX',
-    #'TranslateY',
-    #'ShearX',
-    #'ShearY',
+    'TranslateY',
+    'ShearX',
+    'ShearY',
 
     ## Color TF (Expect image in the range of [0, 1]) ##
-    #'Contrast',
-    #'Color',
-    #'Brightness',
-    #'Sharpness',
-    #'Posterize',
-    #'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
+    'Contrast',
+    'Color',
+    'Brightness',
+    'Sharpness',
+    'Posterize',
+    'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
 
     #Color TF (Common mag scale)
     #'+Contrast',
@@ -64,8 +64,8 @@ else:
 ##########################################
 if __name__ == "__main__":
 
-    n_inner_iter = 10
-    epochs = 100
+    n_inner_iter = 1
+    epochs = 200
     dataug_epoch_start=0
 
     #### Classic ####
@@ -95,7 +95,8 @@ if __name__ == "__main__":
     t0 = time.process_time()
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     #tf_dict = TF.TF_dict
-    aug_model = Augmented_model(Data_augV6(TF_dict=tf_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, fixed_mag=True, shared_mag=True), LeNet(3,10)).to(device)
+    #aug_model = Augmented_model(Data_augV6(TF_dict=tf_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, prob_set_size=2, fixed_mag=True, shared_mag=True), LeNet(3,10)).to(device)
+    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=0.0, fixed_prob=False, fixed_mag=False, shared_mag=False), LeNet(3,10)).to(device)
     #aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.5, fixed_mag=True, shared_mag=True), WideResNet(num_classes=10, wrn_size=160)).to(device)
     #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), LeNet(3,10)).to(device)
     print(str(aug_model), 'on', device_name)
