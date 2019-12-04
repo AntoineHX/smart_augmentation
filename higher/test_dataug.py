@@ -64,109 +64,110 @@ else:
 ##########################################
 if __name__ == "__main__":
 
+    tasks={
+        #'classic',
+        #'aug_dataset',
+        'aug_model'
+    }
     n_inner_iter = 1
     epochs = 200
     dataug_epoch_start=0
 
+
     #### Classic ####
-    '''
-    model = LeNet(3,10).to(device)
-    #model = WideResNet(num_classes=10, wrn_size=16).to(device)
-    #model = Augmented_model(Data_augV3(mix_dist=0.0), LeNet(3,10)).to(device)
-    #model.augment(mode=False)
+    if 'classic' in tasks:
+        t0 = time.process_time()
+        model = LeNet(3,10).to(device)
+        #model = WideResNet(num_classes=10, wrn_size=16).to(device)
+        #model = Augmented_model(Data_augV3(mix_dist=0.0), LeNet(3,10)).to(device)
+        #model.augment(mode=False)
 
-    print(str(model), 'on', device_name)
-    log= train_classic(model=model, epochs=epochs)
-    #log= train_classic_higher(model=model, epochs=epochs)
+        print(str(model), 'on', device_name)
+        log= train_classic(model=model, epochs=epochs, print_freq=10)
+        #log= train_classic_higher(model=model, epochs=epochs)
 
-    ####
-    plot_res(log, fig_name="res/{}-{} epochs".format(str(model),epochs))
-    print('-'*9)
-    times = [x["time"] for x in log]
-    out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times)), "Device": device_name, "Log": log}
-    print(str(model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-    with open("res/log/%s.json" % "{}-{} epochs".format(str(model),epochs), "w+") as f:
-        json.dump(out, f, indent=True)
-        print('Log :\"',f.name, '\" saved !')
-    print('-'*9)
-    '''
-    #### Augmented Model ####
-    '''
-    t0 = time.process_time()
-    tf_dict = {k: TF.TF_dict[k] for k in tf_names}
-    #tf_dict = TF.TF_dict
-    #aug_model = Augmented_model(Data_augV6(TF_dict=tf_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, prob_set_size=2, fixed_mag=True, shared_mag=True), LeNet(3,10)).to(device)
-    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.0, fixed_prob=False, fixed_mag=False, shared_mag=False), LeNet(3,10)).to(device)
-    #aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.5, fixed_mag=True, shared_mag=True), WideResNet(num_classes=10, wrn_size=160)).to(device)
-    #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), LeNet(3,10)).to(device)
-    print(str(aug_model), 'on', device_name)
-    #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
-    log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=10, loss_patience=None)
+        exec_time=time.process_time() - t0
+        ####
+        print('-'*9)
+        times = [x["time"] for x in log]
+        out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), "Device": device_name, "Log": log}
+        print(str(model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
+        filename = "{}-{} epochs".format(str(model),epochs)
+        with open("res/log/%s.json" % filename, "w+") as f:
+            json.dump(out, f, indent=True)
+            print('Log :\"',f.name, '\" saved !')
 
-    ####
-    print('-'*9)
-    times = [x["time"] for x in log]
-    out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times)), "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
-    print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-    filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)
-    with open("res/log/%s.json" % filename, "w+") as f:
-        json.dump(out, f, indent=True)
-        print('Log :\"',f.name, '\" saved !')
+        plot_res(log, fig_name="res/"+filename)
 
-    plot_resV2(log, fig_name="res/"+filename, param_names=tf_names)
-
-    print('Execution Time : %.00f '%(time.process_time() - t0))
-    print('-'*9)
-    '''
-    #### TF tests ####
-    #'''
-    res_folder="res/brutus-tests/"
-    epochs= 150
-    inner_its = [1]
-    dist_mix = [1]
-    dataug_epoch_starts= [0]
-    tf_dict = {k: TF.TF_dict[k] for k in tf_names}
-    TF_nb = [len(tf_dict)] #range(10,len(TF.TF_dict)+1) #[len(TF.TF_dict)]
-    N_seq_TF= [2, 3, 4]
-    mag_setup = [(True,True), (False, False)]
-    #prob_setup = [True, False]
-    nb_run= 3
+        print('Execution Time : %.00f '%(exec_time))
+        print('-'*9)
     
-    try:
-        os.mkdir(res_folder)
-        os.mkdir(res_folder+"log/")
-    except FileExistsError:
-        pass
 
-    for n_inner_iter in inner_its:
-        for dataug_epoch_start in dataug_epoch_starts:
-            for n_tf in N_seq_TF:
-                for dist in dist_mix:
-                    #for i in TF_nb:
-                    for m_setup in mag_setup:
-                        #for p_setup in prob_setup:
-                        for run in range(nb_run):
-                            if n_inner_iter == 0 and (m_setup!=(True,True) or p_setup!=True): continue #Autres setup inutiles sans meta-opti
-                            if n_tf ==2 and m_setup==(True,True): continue #Deja resultats
-                            #keys = list(TF.TF_dict.keys())[0:i]
-                            #ntf_dict = {k: TF.TF_dict[k] for k in keys}
+    #### Augmented Dataset ####
+    if 'aug_dataset' in tasks:
 
-                            aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=n_tf, mix_dist=dist, fixed_prob=False, fixed_mag=m_setup[0], shared_mag=m_setup[1]), LeNet(3,10)).to(device)
-                            print(str(aug_model), 'on', device_name)
-                            #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
-                            log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=20, loss_patience=None)
+        t0 = time.process_time()
 
-                            ####
-                            print('-'*9)
-                            times = [x["time"] for x in log]
-                            out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times)), "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
-                            print(str(aug_model),": acc", out["Accuracy"], "in :", out["Time"][0], "+/-", out["Time"][1])
-                            filename = "{}-{}epochs(dataug:{})-{}in_it-{}".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter,run)
-                            with open(res_folder+"log/%s.json" % filename, "w+") as f:
-                                json.dump(out, f, indent=True)
-                                print('Log :\"',f.name, '\" saved !')
+        data_train_aug = AugmentedDataset("./data", train=True, download=download_data, transform=transform, subset=(0,int(len(data_train)/2)))
+        data_train_aug.augement_data(aug_copy=30)
+        print(data_train_aug)
+        dl_train = torch.utils.data.DataLoader(data_train_aug, batch_size=BATCH_SIZE, shuffle=True)
 
-                            #plot_resV2(log, fig_name=res_folder+filename, param_names=tf_names)
-                            print('-'*9)
+        xs, ys = next(iter(dl_train))
+        viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_{}'.format(str(data_train_aug)))
 
-    #'''    
+        model = LeNet(3,10).to(device)
+        #model = WideResNet(num_classes=10, wrn_size=16).to(device)
+        #model = Augmented_model(Data_augV3(mix_dist=0.0), LeNet(3,10)).to(device)
+        #model.augment(mode=False)
+
+        print(str(model), 'on', device_name)
+        log= train_classic(model=model, epochs=epochs, print_freq=10)
+        #log= train_classic_higher(model=model, epochs=epochs)
+
+        exec_time=time.process_time() - t0
+        ####
+        print('-'*9)
+        times = [x["time"] for x in log]
+        out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), "Device": device_name, "Log": log}
+        print(str(model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
+        filename = "{}-{}-{} epochs".format(str(data_train_aug),str(model),epochs)
+        with open("res/log/%s.json" % filename, "w+") as f:
+            json.dump(out, f, indent=True)
+            print('Log :\"',f.name, '\" saved !')
+
+        plot_res(log, fig_name="res/"+filename)
+
+        print('Execution Time : %.00f '%(exec_time))
+        print('-'*9)
+    
+
+    #### Augmented Model ####
+    if 'aug_model' in tasks:
+        t0 = time.process_time()
+
+        tf_dict = {k: TF.TF_dict[k] for k in tf_names}
+
+        #aug_model = Augmented_model(Data_augV6(TF_dict=tf_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, prob_set_size=2, fixed_mag=True, shared_mag=True), LeNet(3,10)).to(device)
+        #aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=0.0, fixed_prob=False, fixed_mag=False, shared_mag=False), LeNet(3,10)).to(device)
+        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=0.0, fixed_prob=False, fixed_mag=False, shared_mag=False), WideResNet(num_classes=10, wrn_size=32)).to(device)
+        #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), WideResNet(num_classes=10, wrn_size=32)).to(device)
+        print(str(aug_model), 'on', device_name)
+        #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
+        log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=10, loss_patience=None)
+
+        exec_time=time.process_time() - t0
+        ####
+        print('-'*9)
+        times = [x["time"] for x in log]
+        out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
+        print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
+        filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)
+        with open("res/log/%s.json" % filename, "w+") as f:
+            json.dump(out, f, indent=True)
+            print('Log :\"',f.name, '\" saved !')
+
+        plot_resV2(log, fig_name="res/"+filename, param_names=tf_names)
+
+        print('Execution Time : %.00f '%(exec_time))
+        print('-'*9)
