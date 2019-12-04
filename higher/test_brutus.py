@@ -33,6 +33,49 @@ else:
 ##########################################
 if __name__ == "__main__":
 
+
+    n_inner_iter = 1
+    epochs = 200
+    dataug_epoch_start=0
+
+    tf_dict = {k: TF.TF_dict[k] for k in tf_names}
+
+    t0 = time.process_time()
+
+    aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=0.0, fixed_prob=False, fixed_mag=False, shared_mag=False), WideResNet(num_classes=10, wrn_size=32)).to(device)
+    #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), WideResNet(num_classes=10, wrn_size=32)).to(device)
+    print(str(aug_model), 'on', device_name)
+    #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
+    log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=None, loss_patience=None)
+
+    exec_time=time.process_time() - t0
+    ####
+    times = [x["time"] for x in log]
+    out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
+    filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)
+    with open("res/log/%s.json" % filename, "w+") as f:
+        json.dump(out, f, indent=True)
+        print('Log :\"',f.name, '\" saved !')
+
+    ####
+    t0 = time.process_time()
+
+    #aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=0.0, fixed_prob=False, fixed_mag=False, shared_mag=False), WideResNet(num_classes=10, wrn_size=32)).to(device)
+    aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), WideResNet(num_classes=10, wrn_size=32)).to(device)
+    print(str(aug_model), 'on', device_name)
+    #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
+    log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=None, loss_patience=None)
+
+    exec_time=time.process_time() - t0
+    ####
+    times = [x["time"] for x in log]
+    out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
+    filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)
+    with open("res/log/%s.json" % filename, "w+") as f:
+        json.dump(out, f, indent=True)
+        print('Log :\"',f.name, '\" saved !')
+
+    '''
     res_folder="res/brutus-tests/"
     epochs= 150
     inner_its = [1]
@@ -81,3 +124,4 @@ if __name__ == "__main__":
 
                             #plot_resV2(log, fig_name=res_folder+filename, param_names=tf_names)
                             print('-'*9)
+    '''

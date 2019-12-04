@@ -625,9 +625,9 @@ def run_dist_dataugV2(model, epochs=1, inner_it=0, dataug_epoch_start=0, print_f
                 model_copy(src=fmodel, dst=model)
                 optim_copy(dopt=diffopt, opt=inner_opt)
 
-                if epoch>50:
-                    meta_opt.step()
-                    model['data_aug'].adjust_param(soft=False) #Contrainte sum(proba)=1
+                #if epoch>50:
+                meta_opt.step()
+                model['data_aug'].adjust_param(soft=False) #Contrainte sum(proba)=1
                 #model['data_aug'].next_TF_set()
 
                 fmodel = higher.patch.monkeypatch(model, device=None, copy_initial_weights=True)

@@ -94,6 +94,8 @@ class NetworkBlock(nn.Module):
     def forward(self, x):
         return self.layer(x)
 
+
+#wrn_size: 32 = WRN-28-2 ? 160 = WRN-28-10
 class WideResNet(nn.Module):
     #def __init__(self, depth, num_classes, widen_factor=1, dropRate=0.0):
     def __init__(self, num_classes, wrn_size, depth=28, dropRate=0.0):

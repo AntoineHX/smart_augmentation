@@ -65,21 +65,26 @@ class AugmentedDataset(VisionDataset):
 
 
         self._TF = [
-            'Invert',
-            'Cutout',
-            'Sharpness',
-            'AutoContrast',
-            'Posterize',
-            'ShearX', 
+            ## Geometric TF ##
+            'Rotate',
             'TranslateX',
             'TranslateY',
+            'ShearX',
             'ShearY',
-            'Rotate',
-            'Equalize',
+
+            'Cutout',
+
+            ## Color TF ##
             'Contrast',
             'Color',
-            'Solarize',
-            'Brightness'
+            'Brightness',
+            'Sharpness',
+            #'Posterize',
+            #'Solarize',
+
+            'Invert',
+            'AutoContrast',
+            'Equalize',
         ]
         self._op_list =[]
         self.prob=0.5
@@ -119,6 +124,7 @@ class AugmentedDataset(VisionDataset):
 
         for idx, image in enumerate(self.sup_data):
             if (idx/self.dataset_info['sup'])%0.2==0: print("Augmenting data... ", idx,"/", self.dataset_info['sup'])
+            #if idx==10000:break
 
             for _ in range(aug_copy):
                 chosen_policy = policies[np.random.choice(len(policies))]
