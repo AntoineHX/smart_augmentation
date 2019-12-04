@@ -69,7 +69,7 @@ if __name__ == "__main__":
         'aug_dataset',
         #'aug_model'
     }
-    n_inner_iter = 0
+    n_inner_iter = 1
     epochs = 100
     dataug_epoch_start=0
 
@@ -104,6 +104,9 @@ if __name__ == "__main__":
 
     #### Augmented Dataset ####
     if 'aug_dataset' in tasks:
+
+        xs, ys = next(iter(dl_train))
+        viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_{}'.format(str(data_train_aug)))
         t0 = time.process_time()
         model = LeNet(3,10).to(device)
         #model = WideResNet(num_classes=10, wrn_size=16).to(device)

@@ -34,6 +34,8 @@ from PIL import Image
 import augmentation_transforms
 import numpy as np
 
+download_data=False
+
 class AugmentedDataset(VisionDataset):
     def __init__(self, root, train=True, transform=None, target_transform=None, download=False, subset=None):
 
@@ -63,9 +65,21 @@ class AugmentedDataset(VisionDataset):
 
 
         self._TF = [
-        'Invert', 'Cutout', 'Sharpness', 'AutoContrast', 'Posterize',
-        'ShearX', 'TranslateX', 'TranslateY', 'ShearY', 'Rotate',
-        'Equalize', 'Contrast', 'Color', 'Solarize', 'Brightness'
+            'Invert',
+            'Cutout',
+            'Sharpness',
+            'AutoContrast',
+            'Posterize',
+            'ShearX', 
+            'TranslateX',
+            'TranslateY',
+            'ShearY',
+            'Rotate',
+            'Equalize',
+            'Contrast',
+            'Color',
+            'Solarize',
+            'Brightness'
         ]
         self._op_list =[]
         self.prob=0.5
@@ -108,13 +122,13 @@ class AugmentedDataset(VisionDataset):
 
             for _ in range(aug_copy):
                 chosen_policy = policies[np.random.choice(len(policies))]
-                aug_image = augmentation_transforms.apply_policy(chosen_policy, image)
+                aug_image = augmentation_transforms.apply_policy(chosen_policy, image, use_mean_std=False) #Cast en float image
                 #aug_image = augmentation_transforms.cutout_numpy(aug_image)
 
                 self.unsup_data+=[aug_image]
                 self.unsup_targets+=[self.sup_targets[idx]]
 
-        self.unsup_data=np.array(self.unsup_data).astype(self.sup_data.dtype)
+        self.unsup_data=(np.array(self.unsup_data)*255.).astype(self.sup_data.dtype) #Cast float image to uint8
         self.data= np.concatenate((self.sup_data, self.unsup_data), axis=0)
         self.targets= np.concatenate((self.sup_targets, self.unsup_targets), axis=0)
 
@@ -133,12 +147,12 @@ class AugmentedDataset(VisionDataset):
         return self.dataset_info['length']
 
     def __str__(self):
-        return "CIFAR10(Sup:{}-Unsup:{})".format(self.dataset_info['sup'], self.dataset_info['unsup'])
+        return "CIFAR10(Sup:{}-Unsup:{}-{}TF)".format(self.dataset_info['sup'], self.dataset_info['unsup'], len(self._TF))
 
 ### Classic Dataset ###
-data_train = torchvision.datasets.CIFAR10("./data", train=True, download=True, transform=transform)
-#data_val = torchvision.datasets.CIFAR10("./data", train=True, download=True, transform=transform)
-data_test = torchvision.datasets.CIFAR10("./data", train=False, download=True, transform=transform)
+data_train = torchvision.datasets.CIFAR10("./data", train=True, download=download_data, transform=transform)
+#data_val = torchvision.datasets.CIFAR10("./data", train=True, download=download_data, transform=transform)
+data_test = torchvision.datasets.CIFAR10("./data", train=False, download=download_data, transform=transform)
 
 
 train_subset_indices=range(int(len(data_train)/2))
@@ -149,8 +163,8 @@ val_subset_indices=range(int(len(data_train)/2),len(data_train))
 dl_train = torch.utils.data.DataLoader(data_train, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(train_subset_indices))
 
 ### Augmented Dataset ###
-data_train_aug = AugmentedDataset("./data", train=True, download=True, transform=transform, subset=(0,int(len(data_train)/2)))
-#data_train_aug.augement_data(aug_copy=1)
+data_train_aug = AugmentedDataset("./data", train=True, download=download_data, transform=transform, subset=(0,int(len(data_train)/2)))
+data_train_aug.augement_data(aug_copy=1)
 print(data_train_aug)
 
 dl_train = torch.utils.data.DataLoader(data_train_aug, batch_size=BATCH_SIZE, shuffle=True)
