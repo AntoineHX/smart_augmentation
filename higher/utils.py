@@ -9,6 +9,16 @@ from torchviz import make_dot
 import torch
 import torch.nn.functional as F
 
+import time
+
+class timer():
+    def __init__(self):
+        self._start_time=time.time()
+    def exec_time(self):
+        end = time.time()
+        res = end-self._start_time
+        self._start_time=end
+        return res
 
 def print_graph(PyTorch_obj, fig_name='graph'):
     graph=make_dot(PyTorch_obj) #Loss give the whole graph

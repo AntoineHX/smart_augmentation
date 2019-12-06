@@ -6,7 +6,9 @@ if __name__ == "__main__":
     files=[
         #"res/good_TF_tests/log/Aug_mod(Data_augV5(Mix0.5-14TFx2-MagFxSh)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
         #"res/good_TF_tests/log/Aug_mod(Data_augV5(Uniform-14TFx2-MagFxSh)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
-        "res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx2-MagFxSh)-LeNet)-150epochs(dataug:0)-0in_it-0.json",
+        "res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-0.json",
+        "res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-1.json",
+        "res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-2.json",
         #"res/log/Aug_mod(RandAugUDA(18TFx2-Mag1)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
     ]
 
@@ -80,7 +82,7 @@ if __name__ == "__main__":
     nb_run=3
     accs = []
     times = []
-    files = ["res/brutus-tests/log/Aug_mod(Data_augV5(Mix1.0-18TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-1in_it-%s.json"%str(run) for run in range(nb_run)]
+    files = ["res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx2-MagFxSh)-LeNet)-150epochs(dataug:0)-0in_it-%s.json"%str(run) for run in range(nb_run)]
     
     for idx, file in enumerate(files):
         #legend+=str(idx)+'-'+file+'\n'
@@ -88,6 +90,7 @@ if __name__ == "__main__":
             data = json.load(json_file)
         accs.append(data['Accuracy'])
         times.append(data['Time'][0])
+        print(idx, data['Accuracy'])
 
     print(files[0], np.mean(accs), np.std(accs), np.mean(times))
     #'''

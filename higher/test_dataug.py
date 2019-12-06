@@ -69,21 +69,21 @@ if __name__ == "__main__":
         #'aug_dataset',
         'aug_model'
     }
-    n_inner_iter = 1
-    epochs = 100
+    n_inner_iter = 0
+    epochs = 150
     dataug_epoch_start=0
 
+    model = LeNet(3,10)
+    #model = MobileNetV2(num_classes=10)
+    #model = WideResNet(num_classes=10, wrn_size=32)
 
     #### Classic ####
     if 'classic' in tasks:
         t0 = time.process_time()
-        model = LeNet(3,10).to(device)
-        #model = WideResNet(num_classes=10, wrn_size=16).to(device)
-        #model = Augmented_model(Data_augV3(mix_dist=0.0), LeNet(3,10)).to(device)
-        #model.augment(mode=False)
+        model = model.to(device)
 
-        print(str(model), 'on', device_name)
-        log= train_classic(model=model, epochs=epochs, print_freq=10)
+        print("{} on {} for {} epochs".format(str(model), device_name, epochs))
+        log= train_classic(model=model, epochs=epochs, print_freq=1)
         #log= train_classic_higher(model=model, epochs=epochs)
 
         exec_time=time.process_time() - t0
@@ -116,12 +116,9 @@ if __name__ == "__main__":
         xs, ys = next(iter(dl_train))
         viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_{}'.format(str(data_train_aug)))
 
-        model = LeNet(3,10).to(device)
-        #model = WideResNet(num_classes=10, wrn_size=16).to(device)
-        #model = Augmented_model(Data_augV3(mix_dist=0.0), LeNet(3,10)).to(device)
-        #model.augment(mode=False)
+        model = model.to(device)
 
-        print(str(model), 'on', device_name)
+        print("{} on {} for {} epochs".format(str(model), device_name, epochs))
         log= train_classic(model=model, epochs=epochs, print_freq=10)
         #log= train_classic_higher(model=model, epochs=epochs)
 
@@ -147,14 +144,13 @@ if __name__ == "__main__":
         t0 = time.process_time()
 
         tf_dict = {k: TF.TF_dict[k] for k in tf_names}
+        #aug_model = Augmented_model(Data_augV6(TF_dict=tf_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, prob_set_size=2, fixed_mag=True, shared_mag=True), model).to(device)
+        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.0, fixed_prob=True, fixed_mag=True, shared_mag=True), model).to(device)
+        #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 
-        #aug_model = Augmented_model(Data_augV6(TF_dict=tf_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, prob_set_size=2, fixed_mag=True, shared_mag=True), LeNet(3,10)).to(device)
-        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=0.0, fixed_prob=False, fixed_mag=False, shared_mag=False), LeNet(3,10)).to(device)
-        #aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=0.0, fixed_prob=False, fixed_mag=False, shared_mag=False), WideResNet(num_classes=10, wrn_size=32)).to(device)
-        #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), WideResNet(num_classes=10, wrn_size=32)).to(device)
-        print(str(aug_model), 'on', device_name)
+        print("{} on {} for {} epochs - {} inner_it".format(str(aug_model), device_name, epochs, n_inner_iter))
         #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
-        log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=1, KLdiv=True, loss_patience=None)
+        log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=10, KLdiv=True, loss_patience=None)
 
         exec_time=time.process_time() - t0
         ####
