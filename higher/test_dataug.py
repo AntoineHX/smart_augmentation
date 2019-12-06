@@ -149,7 +149,6 @@ if __name__ == "__main__":
         #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 
         print("{} on {} for {} epochs - {} inner_it".format(str(aug_model), device_name, epochs, n_inner_iter))
-        #run_simple_dataug(inner_it=n_inner_iter, epochs=epochs)
         log= run_dist_dataugV2(model=aug_model, epochs=epochs, inner_it=n_inner_iter, dataug_epoch_start=dataug_epoch_start, print_freq=10, KLdiv=True, loss_patience=None)
 
         exec_time=time.process_time() - t0
