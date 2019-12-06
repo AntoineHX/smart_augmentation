@@ -50,6 +50,7 @@ class AugmentedDataset(VisionDataset):
         for idx, img in enumerate(self.sup_data):
             self.sup_data[idx]= Image.fromarray(img) #to PIL Image
 
+        self.unsup_ratio=5 #Batch size unsup = train batch size * unsup_ratio
         self.unsup_data=[]
         self.unsup_targets=[]
 

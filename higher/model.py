@@ -43,7 +43,8 @@ class LeNet(nn.Module):
         #print("Shape ", out.shape)
         out = F.linear(out, self._params["w4"], self._params["b4"])
         #print("Shape ", out.shape)
-        return F.log_softmax(out, dim=1)
+        #return F.log_softmax(out, dim=1)
+        return out
 
     def __getitem__(self, key):
         return self._params[key]
