@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
 
     n_inner_iter = 1
-    epochs = 200
+    epochs = 100
     dataug_epoch_start=0
 
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
