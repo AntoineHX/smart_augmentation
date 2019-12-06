@@ -305,6 +305,91 @@ def train_classic_tests(model, epochs=1):
     print("Copy ", countcopy)
     return log
 
+def train_UDA(model, dl_unsup, epochs=1, print_freq=1):
+
+    device = next(model.parameters()).device
+    #opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optim = torch.optim.SGD(model.parameters(), lr=1e-2, momentum=0.9)
+
+    model.train()
+    dl_val_it = iter(dl_val)
+    dl_unsup_it =iter(dl_unsup)
+    log = []
+    for epoch in range(epochs):
+        #print_torch_mem("Start epoch")
+        t0 = time.process_time()
+        for i, (features, labels) in enumerate(dl_train):
+            #print_torch_mem("Start iter")
+            features,labels = features.to(device), labels.to(device)
+
+            optim.zero_grad()
+            #Supervised
+            logits = model.forward(features)
+            pred = F.log_softmax(logits, dim=1)
+            sup_loss = F.cross_entropy(pred,labels)
+
+            #Unsupervised
+            try:
+                aug_xs, origin_xs, ys = next(dl_unsup_it)
+            except StopIteration: #Fin epoch val
+                dl_unsup_it =iter(dl_unsup)
+                aug_xs, origin_xs, ys = next(dl_unsup_it)
+            aug_xs, origin_xs, ys = aug_xs.to(device), origin_xs.to(device), ys.to(device)
+
+            #print(aug_xs.shape, origin_xs.shape, ys.shape)
+            sup_logits = model.forward(origin_xs)
+            unsup_logits = model.forward(aug_xs)
+
+            #print(unsup_logits.shape, sup_logits.shape)
+            log_sup=F.log_softmax(sup_logits, dim=1)
+            log_unsup=F.log_softmax(unsup_logits, dim=1)
+            #KL div w/ logits
+            unsup_loss = F.softmax(sup_logits, dim=1)*(log_sup-log_unsup)
+            unsup_loss=unsup_loss.sum(dim=-1).mean()
+
+            #print(unsup_loss.shape)
+            unsupp_coeff = 1
+            loss = sup_loss + unsup_loss * unsupp_coeff
+
+            loss.backward()
+            optim.step()
+
+        #### Tests ####
+        tf = time.process_time()
+        try:
+            xs_val, ys_val = next(dl_val_it)
+        except StopIteration: #Fin epoch val
+            dl_val_it = iter(dl_val)
+            xs_val, ys_val = next(dl_val_it)
+        xs_val, ys_val = xs_val.to(device), ys_val.to(device)
+
+        val_loss = F.cross_entropy(model(xs_val), ys_val)
+        accuracy, _ =test(model)
+        model.train()
+
+        #### Print ####
+        if(print_freq and epoch%print_freq==0):
+            print('-'*9)
+            print('Epoch : %d/%d'%(epoch,epochs))
+            print('Time : %.00f'%(tf - t0))
+            print('Train loss :',loss.item(), '/ val loss', val_loss.item())
+            print('Sup Loss :', sup_loss.item(), '/ unsup_loss :', unsup_loss.item())
+            print('Accuracy :', accuracy)
+
+        #### Log ####
+        data={
+            "epoch": epoch,
+            "train_loss": loss.item(),
+            "val_loss": val_loss.item(),
+            "acc": accuracy,
+            "time": tf - t0,
+
+            "param": None,
+        }
+        log.append(data)
+
+    return log
+
 def run_simple_dataug(inner_it, epochs=1):
     device = next(model.parameters()).device
     dl_train_it = iter(dl_train)
