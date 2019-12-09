@@ -323,7 +323,7 @@ class Bottleneck(nn.Module):
 #ResNet18 : block=BasicBlock, layers=[2, 2, 2, 2]
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
+    def __init__(self, block=BasicBlock, layers=[2, 2, 2, 2], num_classes=1000, zero_init_residual=False,
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None):
         super(ResNet, self).__init__()
@@ -419,11 +419,14 @@ class ResNet(nn.Module):
     def forward(self, x):
         return self._forward_impl(x)
 
+    def __str__(self):
+        return "ResNet18"
+
 ## Wide ResNet ##
 #https://github.com/xternalz/WideResNet-pytorch/blob/master/wideresnet.py
 #https://github.com/arcelien/pba/blob/master/pba/wrn.py
 #https://github.com/szagoruyko/wide-residual-networks/blob/master/pytorch/resnet.py
-
+'''
 class BasicBlock(nn.Module):
     def __init__(self, in_planes, out_planes, stride, dropRate=0.0):
         super(BasicBlock, self).__init__()
@@ -516,3 +519,4 @@ class WideResNet(nn.Module):
 
     def __str__(self):
         return "WideResNet(s{}-d{})".format(self.kernel_size, self.depth)
+'''
