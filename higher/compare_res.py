@@ -82,7 +82,7 @@ if __name__ == "__main__":
     nb_run=3
     accs = []
     times = []
-    files = ["res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx2-MagFxSh)-LeNet)-150epochs(dataug:0)-0in_it-%s.json"%str(run) for run in range(nb_run)]
+    files = ["res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-Mag)-LeNet)-150epochs(dataug:0)-1in_it-%s.json"%str(run) for run in range(nb_run)]
     
     for idx, file in enumerate(files):
         #legend+=str(idx)+'-'+file+'\n'
