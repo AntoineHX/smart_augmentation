@@ -6,21 +6,21 @@ from train_utils import *
 tf_names = [
     ## Geometric TF ##
     'Identity',
-    #'FlipUD',
-    #'FlipLR',
-    #'Rotate',
-    #'TranslateX',
-    #'TranslateY',
-    #'ShearX',
-    #'ShearY',
+    'FlipUD',
+    'FlipLR',
+    'Rotate',
+    'TranslateX',
+    'TranslateY',
+    'ShearX',
+    'ShearY',
 
     ## Color TF (Expect image in the range of [0, 1]) ##
-    #'Contrast',
-    #'Color',
-    #'Brightness',
-    #'Sharpness',
-    #'Posterize',
-    #'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
+    'Contrast',
+    'Color',
+    'Brightness',
+    'Sharpness',
+    'Posterize',
+    'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
 
     #Color TF (Common mag scale)
     #'+Contrast',
@@ -34,23 +34,18 @@ tf_names = [
     #'=Posterize',
     #'=Solarize',
 
-    #'BRotate',
-    #'BTranslateX',
-    #'BTranslateY',
-    #'BShearX',
-    #'BShearY',
-    #'BadTranslateX',
-    #'BadTranslateX_neg',
-    #'BadTranslateY',
-    #'BadTranslateY_neg',
+    'BShearX',
+    'BShearY',
+    'BTranslateX-', 
+    'BTranslateX-',
+    'BTranslateY',
+    'BTranslateY-',
 
-    #'BadColor',
-    #'BadSharpness',
-    #'BadContrast',
-    #'BadBrightness',
+    'BadContrast',
+    'BadBrightness', 
 
     'Random',
-    #'RandBlend'
+    'RandBlend'
     #Non fonctionnel
     #'Auto_Contrast', #Pas opti pour des batch (Super lent)
     #'Equalize',
@@ -71,8 +66,8 @@ if __name__ == "__main__":
         #'aug_dataset',
         'aug_model'
     }
-    n_inner_iter = 1
-    epochs = 1
+    n_inner_iter = 10
+    epochs = 100
     dataug_epoch_start=0
     optim_param={
         'Meta':{
@@ -155,7 +150,7 @@ if __name__ == "__main__":
         ####
         print('-'*9)
         times = [x["time"] for x in log]
-        out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param['Inner'], "Device": device_name, "Log": log}
+        out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param['Inner'], "Device": device_name, "Param_names": data_train_aug._TF, "Log": log}
         print(str(model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
         filename = "{}-{}-{} epochs".format(str(data_train_aug),str(model),epochs)
         with open("res/log/%s.json" % filename, "w+") as f:
@@ -173,8 +168,7 @@ if __name__ == "__main__":
         t0 = time.process_time()
 
         tf_dict = {k: TF.TF_dict[k] for k in tf_names}
-        #aug_model = Augmented_model(Data_augV6(TF_dict=tf_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, prob_set_size=2, fixed_mag=True, shared_mag=True), model).to(device)
-        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=1, mix_dist=0.5, fixed_prob=False, fixed_mag=True, shared_mag=True), model).to(device)
+        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.0, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
         #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 
         print("{} on {} for {} epochs - {} inner_it".format(str(aug_model), device_name, epochs, n_inner_iter))
@@ -183,7 +177,7 @@ if __name__ == "__main__":
              inner_it=n_inner_iter, 
              dataug_epoch_start=dataug_epoch_start, 
              opt_param=optim_param,
-             print_freq=1, 
+             print_freq=10, 
              KLdiv=True, 
              loss_patience=None)
 
@@ -191,14 +185,14 @@ if __name__ == "__main__":
         ####
         print('-'*9)
         times = [x["time"] for x in log]
-        out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param, "Device": device_name, "Log": log}
+        out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param, "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
         print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
         filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)
         with open("res/log/%s.json" % filename, "w+") as f:
             json.dump(out, f, indent=True)
             print('Log :\"',f.name, '\" saved !')
 
-        plot_resV2(log, fig_name="res/"+filename, param_names=tf_names)
+        plot_resV2(log, fig_name="res/"+filename, param_names=aug_model.TF_names())
 
         print('Execution Time : %.00f '%(exec_time))
         print('-'*9)

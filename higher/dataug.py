@@ -692,7 +692,8 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
         else:
             return "Data_augV5(Mix%.1f%s-%dTFx%d-%s)" % (self._mix_factor,dist_param, self._nb_tf, self._N_seqTF, mag_param)
 
-class Data_augV6(nn.Module): #Optimisation sequentielle
+
+class Data_augV6(nn.Module): #Optimisation sequentielle #Mauvais resultats
     def __init__(self, TF_dict=TF.TF_dict, N_TF=1, mix_dist=0.0, fixed_prob=False, prob_set_size=None, fixed_mag=True, shared_mag=True):
         super(Data_augV6, self).__init__()
         assert len(TF_dict)>0

@@ -195,7 +195,7 @@ def viz_sample_data(imgs, labels, fig_name='data_sample', weight_labels=None):
         plt.grid(False)
         plt.imshow(sample[i,].detach().numpy(), cmap=plt.cm.binary)
         label = str(labels[i].item())
-        if weight_labels is not None : label+= ("- p %.2f" % weight_labels[i].item())
+        if weight_labels is not None : label+= (" - p %.2f" % weight_labels[i].item())
         plt.xlabel(label)
 
     plt.savefig(fig_name)
