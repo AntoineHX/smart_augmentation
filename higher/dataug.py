@@ -628,8 +628,8 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
             if soft :
                 self._params['prob'].data=F.softmax(self._params['prob'].data, dim=0) #Trop 'soft', bloque en dist uniforme si lr trop faible
             else:
-                self._params['prob'].data = F.relu(self._params['prob'].data)
-                #self._params['prob'].data = self._params['prob'].clamp(min=0.0,max=1.0)
+                #self._params['prob'].data = F.relu(self._params['prob'].data)
+                self._params['prob'].data = self._params['prob'].data.clamp(min=1/(self._nb_tf*100),max=1.0)
                 self._params['prob'].data = self._params['prob']/sum(self._params['prob']) #Contrainte sum(p)=1
 
         if not self._fixed_mag:

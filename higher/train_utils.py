@@ -735,6 +735,8 @@ def run_dist_dataugV2(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
                 val_loss.backward()
                 #print("meta", time.process_time()-t)
                 #print('proba grad',model['data_aug']['prob'].grad)
+                if model['data_aug']['prob'].grad is None or model['data_aug']['mag'] is None:
+                    print("Warning no grad (iter",i,") :\n Prob-",model['data_aug']['prob'].grad,"\n Mag-", model['data_aug']['mag'].grad)
 
                 countcopy+=1
                 model_copy(src=fmodel, dst=model)
