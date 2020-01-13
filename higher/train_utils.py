@@ -728,7 +728,7 @@ def run_dist_dataugV2(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
             if(high_grad_track and i>0 and i%inner_it==0): #Perform Meta step
                 #print("meta")
 
-                val_loss = compute_vaLoss(model=fmodel, dl_it=dl_val_it, dl=dl_val) + fmodel['data_aug'].reg_loss()          
+                val_loss = compute_vaLoss(model=fmodel, dl_it=dl_val_it, dl=dl_val) #+ fmodel['data_aug'].reg_loss()          
                 #print_graph(val_loss)
 
                 #t = time.process_time()

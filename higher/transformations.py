@@ -145,6 +145,7 @@ def zero_stack(tensor, zero_pos):
     
 #https://github.com/tensorflow/models/blob/fc2056bce6ab17eabdc139061fef8f4f2ee763ec/research/autoaugment/augmentation_transforms.py#L137
 PARAMETER_MAX = 1  # What is the max 'level' a transform could be predicted
+PARAMETER_MIN = 0.1
 def float_parameter(level, maxval):
   """Helper function to scale `val` between 0 and maxval .
   Args:
