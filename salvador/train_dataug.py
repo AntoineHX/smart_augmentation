@@ -549,10 +549,10 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='PyTorch Classification Training')
 
-    parser.add_argument('--data-path', default='/Salvador', help='dataset')
-    parser.add_argument('--model', default='resnet50', help='model')
-    parser.add_argument('--device', default='cuda:1', help='device')
-    parser.add_argument('-b', '--batch-size', default=4, type=int)
+    parser.add_argument('--data-path', default='/github/smart_augmentation/salvador/data', help='dataset')
+    parser.add_argument('--model', default='resnet18', help='model') #'resnet18'
+    parser.add_argument('--device', default='cuda:0', help='device')
+    parser.add_argument('-b', '--batch-size', default=8, type=int)
     parser.add_argument('--epochs', default=3, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('-j', '--workers', default=0, type=int, metavar='N',

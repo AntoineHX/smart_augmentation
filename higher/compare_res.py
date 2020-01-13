@@ -2,13 +2,12 @@ from utils import *
 
 if __name__ == "__main__":
 
-    '''
+    #'''
     files=[
-        #"res/good_TF_tests/log/Aug_mod(Data_augV5(Mix0.5-14TFx2-MagFxSh)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
-        #"res/good_TF_tests/log/Aug_mod(Data_augV5(Uniform-14TFx2-MagFxSh)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
-        "res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-0.json",
-        "res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-1.json",
-        "res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-2.json",
+        "res/log/Aug_mod(Data_augV5(Mix0.8-23TFx4-Mag)-LeNet)-100 epochs (dataug:0)- 1 in_it.json",
+        #"res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-0.json",
+        #"res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-1.json",
+        #"res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-2.json",
         #"res/log/Aug_mod(RandAugUDA(18TFx2-Mag1)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
     ]
 
@@ -18,7 +17,7 @@ if __name__ == "__main__":
             data = json.load(json_file)
             plot_resV2(data['Log'], fig_name=file.replace('.json','').replace('log/',''), param_names=data['Param_names'])
             #plot_TF_influence(data['Log'], param_names=data['Param_names'])
-    '''
+    #'''
     ## Loss , Acc, Proba = f(epoch) ##
     #plot_compare(filenames=files, fig_name="res/compare")
 
@@ -78,7 +77,7 @@ if __name__ == "__main__":
     '''
 
     #Res print
-    #'''
+    '''
     nb_run=3
     accs = []
     times = []
@@ -93,4 +92,4 @@ if __name__ == "__main__":
         print(idx, data['Accuracy'])
 
     print(files[0], np.mean(accs), np.std(accs), np.mean(times))
-    #'''
+    '''

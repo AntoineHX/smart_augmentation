@@ -93,15 +93,15 @@ if __name__ == "__main__":
         json.dump(out, f, indent=True)
         print('Log :\"',f.name, '\" saved !')
     '''
-    res_folder="res/brutus-tests/"
+    res_folder="res/brutus-tests2/"
     epochs= 150
     inner_its = [1]
     dist_mix = [0.0, 0.5, 0.8, 1.0]
     dataug_epoch_starts= [0]
     tf_dict = {k: TF.TF_dict[k] for k in tf_names}
     TF_nb = [len(tf_dict)] #range(10,len(TF.TF_dict)+1) #[len(TF.TF_dict)]
-    N_seq_TF= [2, 3]
-    mag_setup = [(True,True), (False, False)]
+    N_seq_TF= [2, 3, 4]
+    mag_setup = [(True,True), (False, False)] #(Fixed, Shared)
     #prob_setup = [True, False]
     nb_run= 3
     
@@ -118,11 +118,13 @@ if __name__ == "__main__":
                     #for i in TF_nb:
                     for m_setup in mag_setup:
                         #for p_setup in prob_setup:
-                        p_setup=True
+                        p_setup=False
                         for run in range(nb_run):
-                            if n_inner_iter == 0 and (m_setup!=(True,True) and p_setup!=True): continue #Autres setup inutiles sans meta-opti
+                            if (n_inner_iter == 0 and (m_setup!=(True,True) and p_setup!=True)) or (p_setup and dist!=0.0): continue #Autres setup inutiles sans meta-opti
                             #keys = list(TF.TF_dict.keys())[0:i]
                             #ntf_dict = {k: TF.TF_dict[k] for k in keys}
+
+                            t0 = time.process_time()
 
                             aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=n_tf, mix_dist=dist, fixed_prob=p_setup, fixed_mag=m_setup[0], shared_mag=m_setup[1]), model).to(device)
                             #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
@@ -143,9 +145,9 @@ if __name__ == "__main__":
                             times = [x["time"] for x in log]
                             out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param, "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
                             print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-                            filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)
-                            with open("res/log/%s.json" % filename, "w+") as f:
+                            filename = "{}-{} epochs (dataug:{})- {} in_it-{}".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter, run)
+                            with open(res_folder+"log/%s.json" % filename, "w+") as f:
                                 json.dump(out, f, indent=True)
                                 print('Log :\"',f.name, '\" saved !')
                             print('-'*9)
-    '''
+    #'''

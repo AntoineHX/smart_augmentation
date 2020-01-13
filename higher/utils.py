@@ -90,6 +90,7 @@ def plot_resV2(log, fig_name='res', param_names=None):
 
         ax[0, 2].set_title('Mag =f(epoch)')
         ax[0, 2].stackplot(epochs, mag, labels=param_names)
+        #ax[0, 2].plot(epochs, np.array(mag).T, label=param_names)
         ax[0, 2].legend(param_names, loc='center left', bbox_to_anchor=(1, 0.5)) 
 
         ax[1, 2].set_title('Mag =f(TF)')
