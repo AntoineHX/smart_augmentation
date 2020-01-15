@@ -103,7 +103,8 @@ TF_dict={ #Dataugv5
 }
 
 TF_no_mag={'Identity', 'FlipUD', 'FlipLR', 'Random', 'RandBlend'}
-TF_ignore_mag= TF_no_mag | {'Solarize', 'Posterize', '=Solarize', '=Posterize'}
+TF_no_grad={'Solarize', 'Posterize', '=Solarize', '=Posterize'}
+TF_ignore_mag= TF_no_mag | TF_no_grad
 
 def int_image(float_image): #ATTENTION : legere perte d'info (granularite : 1/256 = 0.0039)
   return (float_image*255.).type(torch.uint8)

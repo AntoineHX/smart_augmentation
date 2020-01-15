@@ -3,6 +3,40 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+import higher
+class Higher_model(nn.Module):
+    def __init__(self, model):
+        super(Higher_model, self).__init__()
+
+        self._mods = nn.ModuleDict({
+            'original': model,
+            'functional': higher.patch.monkeypatch(model, device=None, copy_initial_weights=True)
+            })
+
+    def get_diffopt(self, opt, grad_callback=None, track_higher_grads=True):
+        return higher.optim.get_diff_optim(opt, 
+            self._mods['original'].parameters(),
+            fmodel=self._mods['functional'],
+            grad_callback=grad_callback,
+            track_higher_grads=track_higher_grads)
+
+    def forward(self, x):
+        return self._mods['functional'](x)
+
+    def detach_(self):
+        tmp = self._mods['functional'].fast_params
+        self._mods['functional']._fast_params=[]
+        self._mods['functional'].update_params(tmp)
+        for p in self._mods['functional'].fast_params:
+            p.detach_().requires_grad_()
+
+    def __getitem__(self, key):
+        return self._mods[key]
+
+    def __str__(self):
+        return self._mods['original'].__str__()
+
 ## Basic CNN ##
 class LeNet_F(nn.Module):
     def __init__(self, num_inp, num_out):
