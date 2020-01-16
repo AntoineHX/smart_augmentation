@@ -70,14 +70,8 @@ def train_classic(model, opt_param, epochs=1, print_freq=1):
 
         #### Tests ####
         tf = time.process_time()
-        try:
-            xs_val, ys_val = next(dl_val_it)
-        except StopIteration: #Fin epoch val
-            dl_val_it = iter(dl_val)
-            xs_val, ys_val = next(dl_val_it)
-        xs_val, ys_val = xs_val.to(device), ys_val.to(device)
 
-        val_loss = F.cross_entropy(model(xs_val), ys_val)
+        val_loss = compute_vaLoss(model=model, dl_it=dl_val_it, dl=dl_val)
         accuracy, _ =test(model)
         model.train()
 
@@ -656,6 +650,8 @@ def run_dist_dataugV2(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
     fmodel = higher.patch.monkeypatch(model, device=None, copy_initial_weights=True)
     diffopt = higher.optim.get_diff_optim(inner_opt, model.parameters(),fmodel=fmodel, track_higher_grads=high_grad_track)
 
+    meta_opt.zero_grad()
+
     for epoch in range(1, epochs+1):
         #print_torch_mem("Start epoch "+str(epoch))
         #print(high_grad_track, fmodel._data_augmentation, len(fmodel._fast_params))
@@ -755,6 +751,8 @@ def run_dist_dataugV2(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
                 fmodel = higher.patch.monkeypatch(model, device=None, copy_initial_weights=True)
                 diffopt = higher.optim.get_diff_optim(inner_opt, model.parameters(),fmodel=fmodel, track_higher_grads=high_grad_track)
 
+                meta_opt.zero_grad()
+
         tf = time.process_time()
 
         #viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_epoch{}_noTF'.format(epoch))
@@ -825,16 +823,12 @@ def run_dist_dataugV2(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
     #print("Copy ", countcopy)
     return log
 
-def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start=0, print_freq=1, KLdiv=False, loss_patience=None, save_sample=False):
+def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start=0, print_freq=1, KLdiv=False, hp_opt=False, loss_patience=None, save_sample=False):
     device = next(model.parameters()).device
     log = []
     countcopy=0
     val_loss=torch.tensor(0) #Necessaire si pas de metastep sur une epoch
     dl_val_it = iter(dl_val)
-
-    #if inner_it!=0: 
-    meta_opt = torch.optim.Adam(model['data_aug'].parameters(), lr=opt_param['Meta']['lr']) #lr=1e-2
-    inner_opt = torch.optim.SGD(model['model']['original'].parameters(), lr=opt_param['Inner']['lr'], momentum=opt_param['Inner']['momentum']) #lr=1e-2 / momentum=0.9
 
     high_grad_track = True
     if inner_it == 0:
@@ -848,21 +842,27 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
         if dataug_epoch_start==-1: val_loss_monitor = loss_monitor(patience=loss_patience, end_train=2) #1st limit = dataug start
         else: val_loss_monitor = loss_monitor(patience=loss_patience) #Val loss monitor (Not on val data : used by Dataug... => Test data)
 
-    model.train()
-    
-    #fmodel = higher.patch.monkeypatch(model['model'], device=None, copy_initial_weights=True)
-    #diffopt = higher.optim.get_diff_optim(inner_opt, model['model'].parameters(),fmodel=fmodel,track_higher_grads=high_grad_track)
-    #fmodel = higher.patch.monkeypatch(model, device=None, copy_initial_weights=True)
-    #diffopt = higher.optim.get_diff_optim(inner_opt, model.parameters(),fmodel=fmodel,track_higher_grads=high_grad_track)
+    ## Optimizers ##
+    #Inner Opt
+    inner_opt = torch.optim.SGD(model['model']['original'].parameters(), lr=opt_param['Inner']['lr'], momentum=opt_param['Inner']['momentum']) #lr=1e-2 / momentum=0.9
 
     diffopt = model['model'].get_diffopt(
         inner_opt, 
         grad_callback=(lambda grads: clip_norm(grads, max_norm=10)),
         track_higher_grads=high_grad_track)
 
-    #meta_opt = torch.optim.Adam(fmodel['data_aug'].parameters(), lr=opt_param['Meta']['lr']) #lr=1e-2
-
+    #Meta Opt
+    hyper_param = list(model['data_aug'].parameters())
+    if hp_opt : 
+        for param_group in diffopt.param_groups: 
+            for param in list(opt_param['Inner'].keys())[1:]:
+                param_group[param]=torch.tensor(param_group[param]).to(device).requires_grad_()
+                hyper_param += [param_group[param]]
+    meta_opt = torch.optim.Adam(hyper_param, lr=opt_param['Meta']['lr']) #lr=1e-2
     #print(len(model['model']['functional']._fast_params))
+
+    model.train()
+    meta_opt.zero_grad()
 
     for epoch in range(1, epochs+1):
         #print_torch_mem("Start epoch "+str(epoch))
@@ -919,9 +919,9 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
             #print(fmodel['model']._params['b4'].grad)
             #print('prob grad', fmodel['data_aug']['prob'].grad)
 
-            t = time.process_time()
+            #t = time.process_time()
             diffopt.step(loss) #(opt.zero_grad, loss.backward, opt.step)
-            print(len(model['model']['functional']._fast_params),"step", time.process_time()-t)
+            #print(len(model['model']['functional']._fast_params),"step", time.process_time()-t)
 
 
             if(high_grad_track and i>0 and i%inner_it==0): #Perform Meta step
@@ -937,8 +937,15 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
                 meta_opt.step()
                 model['data_aug'].adjust_param(soft=False) #Contrainte sum(proba)=1
 
+                if hp_opt:
+                    for param_group in diffopt.param_groups: 
+                        for param in list(opt_param['Inner'].keys())[1:]:
+                            param_group[param].data = param_group[param].data.clamp(min=1e-4)
+
                 diffopt.detach_()
                 model['model'].detach_()
+
+                meta_opt.zero_grad()
                 
         tf = time.process_time()
 
@@ -963,9 +970,11 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
             "acc": accuracy,
             "time": tf - t0,
 
-            "param": param #if isinstance(model['data_aug'], Data_augV5) 
+            "mix_dist": model['data_aug']['mix_dist'].item(),
+            "param": param, #if isinstance(model['data_aug'], Data_augV5) 
             #else [p.item() for p in model['data_aug']['prob']],
         }
+        if hp_opt : data["opt_param"]=[{'lr': p_grp['lr'].item(), 'momentum': p_grp['momentum'].item()} for p_grp in diffopt.param_groups]
         log.append(data)
         #############
         #### Print ####
@@ -980,8 +989,12 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
             #print('proba grad',model['data_aug']['prob'].grad)
             print('TF Mag :', model['data_aug']['mag'].data)
             #print('Mag grad',model['data_aug']['mag'].grad)
+            print('Mix:', model['data_aug']['mix_dist'].data)
             #print('Reg loss:', model['data_aug'].reg_loss().item())
             #print('Aug loss', aug_loss.item())
+            if hp_opt : 
+                for param_group in diffopt.param_groups:
+                    print('Opt param - lr:', param_group['lr'].item(),'- momentum:', param_group['momentum'].item())
         #############
         if val_loss_monitor : 
             model.eval()

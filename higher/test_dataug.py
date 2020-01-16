@@ -67,7 +67,7 @@ if __name__ == "__main__":
         'aug_model'
     }
     n_inner_iter = 1
-    epochs = 15
+    epochs = 150
     dataug_epoch_start=0
     optim_param={
         'Meta':{
@@ -81,9 +81,10 @@ if __name__ == "__main__":
         }
     }
 
-    #model = LeNet(3,10)
+    model = LeNet(3,10)
+    #model = ResNet(num_classes=10)
+    #Lents
     #model = MobileNetV2(num_classes=10)
-    model = ResNet(num_classes=10)
     #model = WideResNet(num_classes=10, wrn_size=32)
 
     model = Higher_model(model) #run_dist_dataugV3
@@ -94,8 +95,8 @@ if __name__ == "__main__":
         model = model.to(device)
 
         print("{} on {} for {} epochs".format(str(model), device_name, epochs))
-        #log= train_classic(model=model, opt_param=optim_param, epochs=epochs, print_freq=10)
-        log= train_classic_higher(model=model, epochs=epochs)
+        log= train_classic(model=model, opt_param=optim_param, epochs=epochs, print_freq=1)
+        #log= train_classic_higher(model=model, epochs=epochs)
 
         exec_time=time.process_time() - t0
         ####
@@ -181,6 +182,7 @@ if __name__ == "__main__":
              opt_param=optim_param,
              print_freq=1, 
              KLdiv=True, 
+             hp_opt=True,
              loss_patience=None)
 
         exec_time=time.process_time() - t0
@@ -189,12 +191,17 @@ if __name__ == "__main__":
         times = [x["time"] for x in log]
         out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param, "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
         print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-        filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)#+"demi_mag"
+        filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)+"-opt_hp"
         with open("res/log/%s.json" % filename, "w+") as f:
-            json.dump(out, f, indent=True)
-            print('Log :\"',f.name, '\" saved !')
-
-        plot_resV2(log, fig_name="res/"+filename, param_names=aug_model.TF_names())
+            try:
+                json.dump(out, f, indent=True)
+                print('Log :\"',f.name, '\" saved !')
+            except:
+                print("Failed to save logs :",f.name)
+        try:
+            plot_resV2(log, fig_name="res/"+filename, param_names=aug_model.TF_names())
+        except:
+            print("Failed to plot res")
 
         print('Execution Time : %.00f '%(exec_time))
         print('-'*9)
