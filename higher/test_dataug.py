@@ -171,7 +171,7 @@ if __name__ == "__main__":
         t0 = time.process_time()
 
         tf_dict = {k: TF.TF_dict[k] for k in tf_names}
-        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=0.8, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
+        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=1.0, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
         #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 
         print("{} on {} for {} epochs - {} inner_it".format(str(aug_model), device_name, epochs, n_inner_iter))
@@ -182,8 +182,7 @@ if __name__ == "__main__":
              opt_param=optim_param,
              print_freq=1, 
              KLdiv=True, 
-             hp_opt=True,
-             loss_patience=None)
+             hp_opt=False)
 
         exec_time=time.process_time() - t0
         ####

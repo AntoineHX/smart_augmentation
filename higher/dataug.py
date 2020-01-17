@@ -537,19 +537,30 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
         
         self._data_augmentation = True
 
+        #TF
         self._TF_dict = TF_dict
         self._TF= list(self._TF_dict.keys())
         self._nb_tf= len(self._TF)
-
         self._N_seqTF = N_TF
+
+        #Mag
         self._shared_mag = shared_mag
         self._fixed_mag = fixed_mag
+
+        #Distribution
+        self._fixed_prob=fixed_prob
+        self._samples = []
+
+        self._mix_dist = False
+        if mix_dist != 0.0: #Mix dist
+            self._mix_dist = True
 
         self._fixed_mix=True
         if mix_dist is None: #Learn Mix dist
             self._fixed_mix = False
             mix_dist=0.5
-
+        
+        #Params
         init_mag = float(TF.PARAMETER_MAX) if self._fixed_mag else float(TF.PARAMETER_MAX)/2
         self._params = nn.ParameterDict({
             "prob": nn.Parameter(torch.ones(self._nb_tf)/self._nb_tf), #Distribution prob uniforme
@@ -561,14 +572,6 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
         for tf in TF.TF_no_grad :
             if tf in self._TF: self._params['mag'].data[self._TF.index(tf)]=float(TF.PARAMETER_MAX) #TF fixe a max parameter
         #for t in TF.TF_no_mag: self._params['mag'][self._TF.index(t)].data-=self._params['mag'][self._TF.index(t)].data #Mag inutile pour les TF ignore_mag
-
-        #Distribution
-        self._fixed_prob=fixed_prob
-        self._samples = []
-        self._mix_dist = False
-        if mix_dist != 0.0: #Mix dist
-            self._mix_dist = True
-            #self._mix_factor = max(min(mix_dist, 0.999), 0.0)
 
         #Mag regularisation
         if not self._fixed_mag:
@@ -595,7 +598,6 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
                 else:
                     prob = self._params["prob"].detach() if self._fixed_prob else self._params["prob"]
                     mix_dist = self._params["mix_dist"].detach() if self._fixed_mix else self._params["mix_dist"]
-                    #self._distrib = (self._mix_factor*prob+(1-self._mix_factor)*uniforme_dist)#.softmax(dim=1) #Mix distrib reel / uniforme avec mix_factor
                     self._distrib = (mix_dist*prob+(1-mix_dist)*uniforme_dist)#.softmax(dim=1) #Mix distrib reel / uniforme avec mix_factor
 
                 cat_distrib= Categorical(probs=torch.ones((batch_size, self._nb_tf), device=device)*self._distrib)
@@ -613,14 +615,13 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
         
         for tf_idx in range(self._nb_tf):
             mask = sampled_TF==tf_idx #Create selection mask
-            smp_x = x[mask] #torch.masked_select() ? (NEcessite d'expand le mask au meme dim)
+            smp_x = x[mask] #torch.masked_select() ? (Necessite d'expand le mask au meme dim)
 
             if smp_x.shape[0]!=0: #if there's data to TF
                 magnitude=self._params["mag"] if self._shared_mag else self._params["mag"][tf_idx]
                 if self._fixed_mag: magnitude=magnitude.detach() #Fmodel tente systematiquement de tracker les gradient de tout les param
 
                 tf=self._TF[tf_idx]
-                #print(magnitude)
 
                 #In place
                 #x[mask]=self._TF_dict[tf](x=smp_x, mag=magnitude)
@@ -638,13 +639,11 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
             if soft :
                 self._params['prob'].data=F.softmax(self._params['prob'].data, dim=0) #Trop 'soft', bloque en dist uniforme si lr trop faible
             else:
-                #self._params['prob'].data = F.relu(self._params['prob'].data)
                 self._params['prob'].data = self._params['prob'].data.clamp(min=1/(self._nb_tf*100),max=1.0)
                 self._params['prob'].data = self._params['prob']/sum(self._params['prob']) #Contrainte sum(p)=1
 
         if not self._fixed_mag:
             self._params['mag'].data = self._params['mag'].data.clamp(min=TF.PARAMETER_MIN, max=TF.PARAMETER_MAX)
-            #self._params['mag'].data = F.relu(self._params['mag'].data) - F.relu(self._params['mag'].data - TF.PARAMETER_MAX)
 
         if not self._fixed_mix:
             self._params['mix_dist'].data = self._params['mix_dist'].data.clamp(min=0.0, max=0.999)
@@ -653,12 +652,6 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
         if len(self._samples)==0 : return 1 #Pas d'echantillon = pas de ponderation
 
         prob = self._params["prob"].detach() if self._fixed_prob else self._params["prob"]
-        # 1 seule TF
-        #self._sample = self._samples[-1]
-        #w_loss = torch.zeros((self._sample.shape[0],self._nb_tf), device=self._sample.device)
-        #w_loss.scatter_(dim=1, index=self._sample.view(-1,1), value=1)
-        #w_loss = w_loss * self._params["prob"]/self._distrib #Ponderation par les proba (divisee par la distrib pour pas diminuer la loss)
-        #w_loss = torch.sum(w_loss,dim=1)
         
         #Plusieurs TF sequentielles (Attention ne prend pas en compte ordre !)
         w_loss = torch.zeros((self._samples[0].shape[0],self._nb_tf), device=self._samples[0].device)
@@ -672,7 +665,7 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
         return w_loss
 
     def reg_loss(self, reg_factor=0.005):
-        if self._fixed_mag: # or self._fixed_prob: #Pas de regularisation si trop peu de DOF
+        if self._fixed_mag:
             return torch.tensor(0)
         else:
             #return reg_factor * F.l1_loss(self._params['mag'][self._reg_mask], target=self._reg_tgt, reduction='mean') 
@@ -1109,9 +1102,6 @@ class Augmented_model(nn.Module):
 
         self.augment(mode=True)
 
-    #def initialize(self):
-    #    self._mods['model'].initialize()
-
     def forward(self, x):
         return self._mods['model'](self._mods['data_aug'](x))
     
@@ -1128,7 +1118,6 @@ class Augmented_model(nn.Module):
 
     def eval(self):
         return self.train(mode=False)
-        #super(Augmented_model, self).eval()
 
     def items(self):
         """Return an iterable of the ModuleDict key/value pairs.

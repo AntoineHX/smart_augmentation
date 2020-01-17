@@ -823,11 +823,9 @@ def run_dist_dataugV2(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
     #print("Copy ", countcopy)
     return log
 
-def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start=0, print_freq=1, KLdiv=False, hp_opt=False, loss_patience=None, save_sample=False):
+def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start=0, print_freq=1, KLdiv=False, hp_opt=False, save_sample=False):
     device = next(model.parameters()).device
     log = []
-    countcopy=0
-    val_loss=torch.tensor(0) #Necessaire si pas de metastep sur une epoch
     dl_val_it = iter(dl_val)
 
     high_grad_track = True
@@ -836,11 +834,6 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
     if dataug_epoch_start!=0:
         model.augment(mode=False)
         high_grad_track = False
-
-    val_loss_monitor= None
-    if loss_patience != None :
-        if dataug_epoch_start==-1: val_loss_monitor = loss_monitor(patience=loss_patience, end_train=2) #1st limit = dataug start
-        else: val_loss_monitor = loss_monitor(patience=loss_patience) #Val loss monitor (Not on val data : used by Dataug... => Test data)
 
     ## Optimizers ##
     #Inner Opt
@@ -859,17 +852,13 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
                 param_group[param]=torch.tensor(param_group[param]).to(device).requires_grad_()
                 hyper_param += [param_group[param]]
     meta_opt = torch.optim.Adam(hyper_param, lr=opt_param['Meta']['lr']) #lr=1e-2
-    #print(len(model['model']['functional']._fast_params))
 
     model.train()
     meta_opt.zero_grad()
 
     for epoch in range(1, epochs+1):
-        #print_torch_mem("Start epoch "+str(epoch))
-        #print(high_grad_track, fmodel._data_augmentation, len(fmodel._fast_params))
         t0 = time.process_time()
-        #with higher.innerloop_ctx(model, inner_opt, copy_initial_weights=True, override=opt_param, track_higher_grads=high_grad_track) as (fmodel, diffopt):
-
+       
         for i, (xs, ys) in enumerate(dl_train):
             xs, ys = xs.to(device), ys.to(device)
             
@@ -900,24 +889,16 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
                     aug_loss=0
                     w_loss = model['data_aug'].loss_weight() #Weight loss
 
-                    #if epoch>50: #debut differe ?
                     #KL div w/ logits - Similarite predictions (distributions)
                     aug_loss = F.softmax(sup_logits, dim=1)*(log_sup-log_aug)
                     aug_loss = aug_loss.sum(dim=-1)
-                    #aug_loss = F.kl_div(aug_logits, sup_logits, reduction='none')
                     aug_loss = (w_loss * aug_loss).mean()
-
                     aug_loss += (F.cross_entropy(log_aug, ys , reduction='none') * w_loss).mean()
 
                     unsupp_coeff = 1
                     loss += aug_loss * unsupp_coeff
             
-            #to visualize computational graph
-            #print_graph(loss)
-
-            #loss.backward(retain_graph=True)
-            #print(fmodel['model']._params['b4'].grad)
-            #print('prob grad', fmodel['data_aug']['prob'].grad)
+            #print_graph(loss) #to visualize computational graph
 
             #t = time.process_time()
             diffopt.step(loss) #(opt.zero_grad, loss.backward, opt.step)
@@ -928,14 +909,14 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
                 #print("meta")
 
                 val_loss = compute_vaLoss(model=model, dl_it=dl_val_it, dl=dl_val) + model['data_aug'].reg_loss()
-                #print_graph(val_loss)
+                #print_graph(val_loss) #to visualize computational graph
 
                 val_loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(model['data_aug'].parameters(), max_norm=10, norm_type=2) #Prevent exploding grad with RNN
 
                 meta_opt.step()
-                model['data_aug'].adjust_param(soft=False) #Contrainte sum(proba)=1
+                model['data_aug'].adjust_param(soft=True) #Contrainte sum(proba)=1
 
                 if hp_opt:
                     for param_group in diffopt.param_groups: 
@@ -949,11 +930,16 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
                 
         tf = time.process_time()
 
-        #viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_epoch{}_noTF'.format(epoch))
-        #viz_sample_data(imgs=model['data_aug'](xs), labels=ys, fig_name='samples/data_sample_epoch{}'.format(epoch))
+        if save_sample:
+                try:
+                    viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_epoch{}_noTF'.format(epoch))
+                    viz_sample_data(imgs=model['data_aug'](xs), labels=ys, fig_name='samples/data_sample_epoch{}'.format(epoch))
+                except:
+                    print("Couldn't save samples epoch"+epoch)
+                    pass
 
 
-        if(not high_grad_track): 
+        if(not val_loss): 
             val_loss = compute_vaLoss(model=model, dl_it=dl_val_it, dl=dl_val)
 
 
@@ -961,7 +947,6 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
         model.train()
 
         #### Log ####
-        #print(type(model['data_aug']) is dataug.Data_augV5)
         param = [{'p': p.item(), 'm':model['data_aug']['mag'].item()} for p in model['data_aug']['prob']] if model['data_aug']._shared_mag else [{'p': p.item(), 'm': m.item()} for p, m in zip(model['data_aug']['prob'], model['data_aug']['mag'])]
         data={
             "epoch": epoch,
@@ -985,24 +970,18 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
             print('Train loss :',loss.item(), '/ val loss', val_loss.item())
             print('Accuracy :', max([x["acc"] for x in log]))
             print('Data Augmention : {} (Epoch {})'.format(model._data_augmentation, dataug_epoch_start))
-            print('TF Proba :', model['data_aug']['prob'].data)
+            if not model['data_aug']._fixed_prob: print('TF Proba :', model['data_aug']['prob'].data)
             #print('proba grad',model['data_aug']['prob'].grad)
-            print('TF Mag :', model['data_aug']['mag'].data)
+            if not model['data_aug']._fixed_mag: print('TF Mag :', model['data_aug']['mag'].data)
             #print('Mag grad',model['data_aug']['mag'].grad)
-            print('Mix:', model['data_aug']['mix_dist'].data)
+            if not model['data_aug']._fixed_mix: print('Mix:', model['data_aug']['mix_dist'].item())
             #print('Reg loss:', model['data_aug'].reg_loss().item())
-            #print('Aug loss', aug_loss.item())
+
             if hp_opt : 
                 for param_group in diffopt.param_groups:
                     print('Opt param - lr:', param_group['lr'].item(),'- momentum:', param_group['momentum'].item())
         #############
-        if val_loss_monitor : 
-            model.eval()
-            val_loss_monitor.register(test_loss)#val_loss.item())
-            if val_loss_monitor.end_training(): break #Stop training
-            model.train()
-
-        if not model.is_augmenting() and (epoch == dataug_epoch_start or (val_loss_monitor and val_loss_monitor.limit_reached()==1)):
+        if not model.is_augmenting() and (epoch == dataug_epoch_start):
             print('Starting Data Augmention...')
             dataug_epoch_start = epoch
             model.augment(mode=True)
@@ -1015,5 +994,4 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
         print("Couldn't save finals samples")
         pass
 
-    #print("Copy ", countcopy)
     return log
