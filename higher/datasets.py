@@ -3,8 +3,8 @@ from torch.utils.data import SubsetRandomSampler
 import torchvision
 
 BATCH_SIZE = 300
-#TEST_SIZE = 300
-TEST_SIZE = 10000
+TEST_SIZE = 300 
+#TEST_SIZE = 10000 #legerement +Rapide / + Consomation memoire !
 
 #ATTENTION : Dataug (Kornia) Expect image in the range of [0, 1]
 #transform_train = torchvision.transforms.Compose([
@@ -35,7 +35,7 @@ import augmentation_transforms
 import numpy as np
 
 download_data=False
-num_workers=0
+num_workers=4 #16
 pin_memory=False
 
 class AugmentedDataset(VisionDataset):
