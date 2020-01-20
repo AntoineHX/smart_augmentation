@@ -68,7 +68,7 @@ if __name__ == "__main__":
     }
     n_inner_iter = 1
     epochs = 150
-    dataug_epoch_start=0
+    dataug_epoch_start=10
     optim_param={
         'Meta':{
             'optim':'Adam',
@@ -86,8 +86,6 @@ if __name__ == "__main__":
     #Lents
     #model = MobileNetV2(num_classes=10)
     #model = WideResNet(num_classes=10, wrn_size=32)
-
-    model = Higher_model(model) #run_dist_dataugV3
 
     #### Classic ####
     if 'classic' in tasks:
@@ -171,6 +169,7 @@ if __name__ == "__main__":
         t0 = time.process_time()
 
         tf_dict = {k: TF.TF_dict[k] for k in tf_names}
+        model = Higher_model(model) #run_dist_dataugV3
         aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.8, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
         #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 

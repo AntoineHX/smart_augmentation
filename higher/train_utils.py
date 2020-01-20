@@ -827,6 +827,7 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
     device = next(model.parameters()).device
     log = []
     dl_val_it = iter(dl_val)
+    val_loss=None
 
     high_grad_track = True
     if inner_it == 0: #No HP optimization
@@ -909,10 +910,8 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
 
             if(high_grad_track and i>0 and i%inner_it==0): #Perform Meta step
                 #print("meta")
-
                 val_loss = compute_vaLoss(model=model, dl_it=dl_val_it, dl=dl_val) + model['data_aug'].reg_loss()
                 #print_graph(val_loss) #to visualize computational graph
-
                 val_loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(model['data_aug'].parameters(), max_norm=10, norm_type=2) #Prevent exploding grad with RNN
@@ -920,7 +919,7 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
                 meta_opt.step()
 
                 #Adjust Hyper-parameters
-                model['data_aug'].adjust_param(soft=True) #Contrainte sum(proba)=1
+                model['data_aug'].adjust_param(soft=False) #Contrainte sum(proba)=1
                 if hp_opt: 
                     for param_group in diffopt.param_groups: 
                         for param in list(opt_param['Inner'].keys())[1:]:
@@ -949,6 +948,7 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
         accuracy, test_loss =test(model)
         model.train()
 
+        print(model['data_aug']._data_augmentation)
         #### Log ####
         param = [{'p': p.item(), 'm':model['data_aug']['mag'].item()} for p in model['data_aug']['prob']] if model['data_aug']._shared_mag else [{'p': p.item(), 'm': m.item()} for p, m in zip(model['data_aug']['prob'], model['data_aug']['mag'])]
         data={
@@ -989,7 +989,13 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=0, dataug_epoch_start
             print('Starting Data Augmention...')
             dataug_epoch_start = epoch
             model.augment(mode=True)
-            if inner_it != 0: high_grad_track = True
+            if inner_it != 0: #Rebuild diffopt if needed
+                high_grad_track = True
+                diffopt = model['model'].get_diffopt(
+                    inner_opt, 
+                    grad_callback=(lambda grads: clip_norm(grads, max_norm=10)),
+                    track_higher_grads=high_grad_track)
+
 
     #Data sample saving
     try:
