@@ -569,8 +569,8 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
             "mix_dist": nn.Parameter(torch.tensor(mix_dist).clamp(min=0.0,max=0.999))
         })
 
-        for tf in TF.TF_no_grad :
-            if tf in self._TF: self._params['mag'].data[self._TF.index(tf)]=float(TF.PARAMETER_MAX) #TF fixe a max parameter
+        #for tf in TF.TF_no_grad :
+        #    if tf in self._TF: self._params['mag'].data[self._TF.index(tf)]=float(TF.PARAMETER_MAX) #TF fixe a max parameter
         #for t in TF.TF_no_mag: self._params['mag'][self._TF.index(t)].data-=self._params['mag'][self._TF.index(t)].data #Mag inutile pour les TF ignore_mag
 
         #Mag regularisation

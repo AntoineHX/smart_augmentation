@@ -6,6 +6,10 @@ BATCH_SIZE = 300
 TEST_SIZE = 300 
 #TEST_SIZE = 10000 #legerement +Rapide / + Consomation memoire !
 
+download_data=False
+num_workers=4 #4
+pin_memory=False #True :+ GPU memory / + Lent
+
 #ATTENTION : Dataug (Kornia) Expect image in the range of [0, 1]
 #transform_train = torchvision.transforms.Compose([
 #    torchvision.transforms.RandomHorizontalFlip(),
@@ -33,10 +37,6 @@ from torchvision.datasets.vision import VisionDataset
 from PIL import Image
 import augmentation_transforms
 import numpy as np
-
-download_data=False
-num_workers=4 #16
-pin_memory=False
 
 class AugmentedDataset(VisionDataset):
     def __init__(self, root, train=True, transform=None, target_transform=None, download=False, subset=None):

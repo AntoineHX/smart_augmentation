@@ -34,18 +34,18 @@ tf_names = [
     #'=Posterize',
     #'=Solarize',
 
-    'BShearX',
-    'BShearY',
-    'BTranslateX-', 
-    'BTranslateX-',
-    'BTranslateY',
-    'BTranslateY-',
+    #'BShearX',
+    #'BShearY',
+    #'BTranslateX-', 
+    #'BTranslateX-',
+    #'BTranslateY',
+    #'BTranslateY-',
 
-    'BadContrast',
-    'BadBrightness', 
+    #'BadContrast',
+    #'BadBrightness', 
 
-    'Random',
-    'RandBlend'
+    #'Random',
+    #'RandBlend'
     #Non fonctionnel
     #'Auto_Contrast', #Pas opti pour des batch (Super lent)
     #'Equalize',
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         t0 = time.process_time()
 
         tf_dict = {k: TF.TF_dict[k] for k in tf_names}
-        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=1.0, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
+        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.8, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
         #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 
         print("{} on {} for {} epochs - {} inner_it".format(str(aug_model), device_name, epochs, n_inner_iter))
@@ -190,7 +190,7 @@ if __name__ == "__main__":
         times = [x["time"] for x in log]
         out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param, "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
         print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-        filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)+"-opt_hp"
+        filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)
         with open("res/log/%s.json" % filename, "w+") as f:
             try:
                 json.dump(out, f, indent=True)
