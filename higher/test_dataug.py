@@ -68,7 +68,7 @@ if __name__ == "__main__":
     }
     n_inner_iter = 1
     epochs = 150
-    dataug_epoch_start=10
+    dataug_epoch_start=0
     optim_param={
         'Meta':{
             'optim':'Adam',

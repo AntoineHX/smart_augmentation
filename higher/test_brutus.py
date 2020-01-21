@@ -50,7 +50,7 @@ if __name__ == "__main__":
     }
 
     #model = LeNet(3,10)
-    model = ResNet(num_classes=10)
+    #model = ResNet(num_classes=10)
     #model = MobileNetV2(num_classes=10)
     #model = WideResNet(num_classes=10, wrn_size=32)
 
@@ -126,6 +126,8 @@ if __name__ == "__main__":
 
                             t0 = time.process_time()
 
+                            model = ResNet(num_classes=10)
+                            model = Higher_model(model) #run_dist_dataugV3
                             aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=n_tf, mix_dist=dist, fixed_prob=p_setup, fixed_mag=m_setup[0], shared_mag=m_setup[1]), model).to(device)
                             #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 
@@ -136,8 +138,7 @@ if __name__ == "__main__":
                                  dataug_epoch_start=dataug_epoch_start, 
                                  opt_param=optim_param,
                                  print_freq=50, 
-                                 KLdiv=True, 
-                                 loss_patience=None)
+                                 KLdiv=True)
 
                             exec_time=time.process_time() - t0
                             ####
