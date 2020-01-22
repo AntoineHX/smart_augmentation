@@ -1,58 +1,25 @@
+""" PyTorch implementation of some PIL image transformations.
+
+    Those implementation are thinked to take advantages of batched computation of PyTorch on GPU.
+
+    Based on Kornia library.
+    See: https://github.com/kornia/kornia
+
+    And PIL.
+    See: 
+        https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageOps.py
+        https://github.com/python-pillow/Pillow/blob/9c78c3f97291bd681bc8637922d6a2fa9415916c/src/PIL/Image.py#L2818
+
+    Inspired from AutoAugment.
+    See: https://github.com/tensorflow/models/blob/fc2056bce6ab17eabdc139061fef8f4f2ee763ec/research/autoaugment/augmentation_transforms.py
+"""
+
 import torch
 import kornia
 import random
 
 ### Available TF for Dataug ###
-'''
-TF_dict={ #Dataugv4
-  ## Geometric TF ##
-  'Identity' : (lambda x, mag: x),
-  'FlipUD' : (lambda x, mag: flipUD(x)),
-  'FlipLR' : (lambda x, mag: flipLR(x)),
-  'Rotate': (lambda x, mag: rotate(x, angle=torch.tensor([rand_int(mag, maxval=30)for _ in x], device=x.device))),
-  'TranslateX': (lambda x, mag: translate(x, translation=torch.tensor([[rand_int(mag, maxval=20), 0] for _ in x], device=x.device))),
-  'TranslateY': (lambda x, mag: translate(x, translation=torch.tensor([[0, rand_int(mag, maxval=20)] for _ in x], device=x.device))),
-  'ShearX': (lambda x, mag: shear(x, shear=torch.tensor([[rand_float(mag, maxval=0.3), 0] for _ in x], device=x.device))),
-  'ShearY': (lambda x, mag: shear(x, shear=torch.tensor([[0, rand_float(mag, maxval=0.3)] for _ in x], device=x.device))),
 
-  ## Color TF (Expect image in the range of [0, 1]) ##
-  'Contrast': (lambda x, mag: contrast(x, contrast_factor=torch.tensor([rand_float(mag, minval=0.1, maxval=1.9) for _ in x], device=x.device))),
-  'Color':(lambda x, mag: color(x, color_factor=torch.tensor([rand_float(mag, minval=0.1, maxval=1.9) for _ in x], device=x.device))),
-  'Brightness':(lambda x, mag: brightness(x, brightness_factor=torch.tensor([rand_float(mag, minval=0.1, maxval=1.9) for _ in x], device=x.device))),
-  'Sharpness':(lambda x, mag: sharpeness(x, sharpness_factor=torch.tensor([rand_float(mag, minval=0.1, maxval=1.9) for _ in x], device=x.device))),
-  'Posterize': (lambda x, mag: posterize(x, bits=torch.tensor([rand_int(mag, minval=4, maxval=8) for _ in x], device=x.device))),
-  'Solarize': (lambda x, mag: solarize(x, thresholds=torch.tensor([rand_int(mag,minval=1, maxval=256)/256. for _ in x], device=x.device))) , #=>Image entre [0,1] #Pas opti pour des batch
-
-  #Non fonctionnel
-  #'Auto_Contrast': (lambda mag: None), #Pas opti pour des batch (Super lent)
-  #'Equalize': (lambda mag: None),
-}
-'''
-'''
-TF_dict={ #Dataugv5 #AutoAugment
-  ## Geometric TF ##
-  'Identity' : (lambda x, mag: x),
-  'FlipUD' : (lambda x, mag: flipUD(x)),
-  'FlipLR' : (lambda x, mag: flipLR(x)),
-  'Rotate': (lambda x, mag: rotate(x, angle=rand_floats(size=x.shape[0], mag=mag, maxval=30))),
-  'TranslateX': (lambda x, mag: translate(x, translation=zero_stack(rand_floats(size=(x.shape[0],), mag=mag, maxval=20), zero_pos=0))),
-  'TranslateY': (lambda x, mag: translate(x, translation=zero_stack(rand_floats(size=(x.shape[0],), mag=mag, maxval=20), zero_pos=1))),
-  'ShearX': (lambda x, mag: shear(x, shear=zero_stack(rand_floats(size=(x.shape[0],), mag=mag, maxval=0.3), zero_pos=0))),
-  'ShearY': (lambda x, mag: shear(x, shear=zero_stack(rand_floats(size=(x.shape[0],), mag=mag, maxval=0.3), zero_pos=1))),
-
-  ## Color TF (Expect image in the range of [0, 1]) ##
-  'Contrast': (lambda x, mag: contrast(x, contrast_factor=rand_floats(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
-  'Color':(lambda x, mag: color(x, color_factor=rand_floats(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
-  'Brightness':(lambda x, mag: brightness(x, brightness_factor=rand_floats(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
-  'Sharpness':(lambda x, mag: sharpeness(x, sharpness_factor=rand_floats(size=x.shape[0], mag=mag, minval=0.1, maxval=1.9))),
-  'Posterize': (lambda x, mag: posterize(x, bits=rand_floats(size=x.shape[0], mag=mag, minval=4., maxval=8.))),#Perte du gradient
-  'Solarize': (lambda x, mag: solarize(x, thresholds=rand_floats(size=x.shape[0], mag=mag, minval=1/256., maxval=256/256.))), #Perte du gradient #=>Image entre [0,1]
-  
-  #Non fonctionnel
-  #'Auto_Contrast': (lambda mag: None), #Pas opti pour des batch (Super lent)
-  #'Equalize': (lambda mag: None),
-}
-'''
 # Dictionnary mapping tranformations identifiers to their function.
 # Each value of the dict should be a lambda function taking a (batch of data, magnitude of transformations) tuple as input and returns a batch of data.
 TF_dict={ #Dataugv5
@@ -112,6 +79,9 @@ TF_no_mag={'Identity', 'FlipUD', 'FlipLR', 'Random', 'RandBlend'} #TF that don't
 TF_no_grad={'Solarize', 'Posterize', '=Solarize', '=Posterize'} #TF which implemetation doesn't allow gradient propagaition.
 TF_ignore_mag= TF_no_mag | TF_no_grad #TF for which magnitude should be ignored (Magnitude fixed).
 
+PARAMETER_MAX = 1  # What is the max 'level' a transform could be predicted
+PARAMETER_MIN = 0.1 # What is the min 'level' a transform could be predicted
+
 def int_image(float_image):
     """Convert a float Tensor/Image to an int Tensor/Image.
 
@@ -121,10 +91,10 @@ def int_image(float_image):
     This will also result in the loss of the gradient associated to input as gradient cannot be tracked on int Tensor.
 
     Args:
-        float_image (torch.float): Image tensor.
+        float_image (FloatTensor): Image tensor.
 
     Returns:
-        (torch.uint8) Converted tensor.
+        (ByteTensor) Converted tensor.
     """
     return (float_image*255.).type(torch.uint8)
 
@@ -132,10 +102,10 @@ def float_image(int_image):
     """Convert a int Tensor/Image to an float Tensor/Image.
 
         Args:
-            int_image (torch.uint8): Image tensor.
+            int_image (ByteTensor): Image tensor.
 
         Returns:
-            (torch.float) Converted tensor.
+            (FloatTensor) Converted tensor.
     """
     return int_image.type(torch.float)/255.
 
@@ -162,7 +132,7 @@ def rand_floats(size, mag, maxval, minval=None):
             minval (float): Minimum value that can be generated. (default: -maxval)
 
         Returns:
-            Generated batch of float values between [minval, maxval].
+            (Tensor) Generated batch of float values between [minval, maxval].
     """
     real_mag = float_parameter(mag, maxval=maxval)
     if not minval : minval = -real_mag
@@ -170,30 +140,52 @@ def rand_floats(size, mag, maxval, minval=None):
     return minval + (real_mag-minval) * torch.rand(size, device=mag.device) #[min_val, real_mag]
 
 def invScale_rand_floats(size, mag, maxval, minval):
-  #Mag=[0,PARAMETER_MAX] => [PARAMETER_MAX, 0] = [maxval, minval]
-  real_mag = float_parameter(float(PARAMETER_MAX) - mag, maxval=maxval-minval)+minval 
-  return real_mag + (maxval-real_mag) * torch.rand(size, device=mag.device) #[real_mag, max_val]
+    """Generate a batch of random values.
+
+        Similar to rand_floats() except that the mag is used in an inversed scale.
+
+        Mag:[0,PARAMETER_MAX] => [PARAMETER_MAX, 0]
+
+        Args:
+            size (int): Number of value to generate.
+            mag (float): Level of the operation that will be between [PARAMETER_MIN, PARAMETER_MAX].
+            maxval (float): Maximum value that can be generated. This will be scaled to mag/PARAMETER_MAX.
+            minval (float): Minimum value that can be generated. (default: -maxval)
+
+        Returns:
+            (Tensor) Generated batch of float values between [minval, maxval].
+    """
+    real_mag = float_parameter(float(PARAMETER_MAX) - mag, maxval=maxval-minval)+minval 
+    return real_mag + (maxval-real_mag) * torch.rand(size, device=mag.device) #[real_mag, max_val]
 
 def zero_stack(tensor, zero_pos):
-  if zero_pos==0:
-    return torch.stack((tensor, torch.zeros((tensor.shape[0],), device=tensor.device)), dim=1)
-  if zero_pos==1:
-    return torch.stack((torch.zeros((tensor.shape[0],), device=tensor.device), tensor), dim=1)
-  else:
-    raise Exception("Invalid zero_pos : ", zero_pos) 
+    """Add a row of zeros to a Tensor.
+
+        This function is intended to be used with single row Tensor, thus returning a 2 dimension Tensor.
+
+        Args:
+            tensor (Tensor): Tensor to be stacked with zeros.
+            zero_pos (int): Wheter the zeros should be added before or after the Tensor. Either 0 or 1.
+
+        Returns:
+            Stacked Tensor.
+    """
+    if zero_pos==0:
+        return torch.stack((tensor, torch.zeros((tensor.shape[0],), device=tensor.device)), dim=1)
+    if zero_pos==1:
+        return torch.stack((torch.zeros((tensor.shape[0],), device=tensor.device), tensor), dim=1)
+    else:
+        raise Exception("Invalid zero_pos : ", zero_pos) 
     
-#https://github.com/tensorflow/models/blob/fc2056bce6ab17eabdc139061fef8f4f2ee763ec/research/autoaugment/augmentation_transforms.py#L137
-PARAMETER_MAX = 1  # What is the max 'level' a transform could be predicted
-PARAMETER_MIN = 0.1
 def float_parameter(level, maxval):
-  """Helper function to scale `val` between 0 and maxval .
-  Args:
-    level: Level of the operation that will be between [0, `PARAMETER_MAX`].
-    maxval: Maximum value that the operation can have. This will be scaled
-      to level/PARAMETER_MAX.
-  Returns:
-    A float that results from scaling `maxval` according to `level`.
-  """
+    """Scale level between 0 and maxval.
+
+        Args:
+            level (float): Level of the operation that will be between [PARAMETER_MIN, PARAMETER_MAX].
+            maxval: Maximum value that the operation can have. This will be scaled to level/PARAMETER_MAX.
+        Returns:
+            A float that results from scaling `maxval` according to `level`.
+    """
 
   #return float(level) * maxval / PARAMETER_MAX
   return (level * maxval / PARAMETER_MAX)#.to(torch.float)
@@ -211,6 +203,14 @@ def float_parameter(level, maxval):
 #  return (level * maxval / PARAMETER_MAX) 
 
 def flipLR(x):
+    """Flip horizontaly/Left-Right images.
+        
+        Args:
+            x (Tensor): Batch of images.
+
+        Returns: 
+            (Tensor): Batch of fliped images.
+    """
     device = x.device
     (batch_size, channels, h, w) = x.shape
 
@@ -222,6 +222,14 @@ def flipLR(x):
     return kornia.warp_perspective(x, M, dsize=(h, w))
 
 def flipUD(x):
+    """Flip vertically/Up-Down images.
+        
+        Args:
+            x (Tensor): Batch of images.
+
+        Returns: 
+            (Tensor): Batch of fliped images.
+    """
     device = x.device
     (batch_size, channels, h, w) = x.shape
 
@@ -233,20 +241,65 @@ def flipUD(x):
     return kornia.warp_perspective(x, M, dsize=(h, w))
 
 def rotate(x, angle):
-  return kornia.rotate(x, angle=angle.type(torch.float)) #Kornia ne supporte pas les int
+    """Rotate images.
+
+        Args:
+            x (Tensor): Batch of images.
+            angle (Tensor): Angles (degrees) of rotation for each images.
+
+        Returns:
+            (Tensor): Batch of rotated images.
+    """
+    return kornia.rotate(x, angle=angle.type(torch.float)) #Kornia ne supporte pas les int
 
 def translate(x, translation):
-  #print(translation)
-  return kornia.translate(x, translation=translation.type(torch.float)) #Kornia ne supporte pas les int
+    """Translate images.
+
+        Args:
+            x (Tensor): Batch of images.
+            translation (Tensor): Distance (pixels) of translation for each images.
+
+        Returns:
+            (Tensor): Batch of translated images.
+    """
+    return kornia.translate(x, translation=translation.type(torch.float)) #Kornia ne supporte pas les int
 
 def shear(x, shear):
-  return kornia.shear(x, shear=shear)
+    """Shear images.
+
+    Args:
+        x (Tensor): Batch of images.
+        shear (Tensor): Angle of shear for each images.
+
+    Returns:
+        (Tensor): Batch of skewed images.
+    """
+    return kornia.shear(x, shear=shear)
 
 def contrast(x, contrast_factor):
-  return kornia.adjust_contrast(x, contrast_factor=contrast_factor) #Expect image in the range of [0, 1]
+    """Adjust contast of images.
 
-#https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageEnhance.py
+    Args:
+        x (FloatTensor): Batch of images.
+        contrast_factor (FloatTensor): Contrast adjust factor per element in the batch. 
+        0 generates a compleatly black image, 1 does not modify the input image while any other non-negative number modify the brightness by this factor.
+
+    Returns:
+        (Tensor): Batch of adjusted images.
+    """
+    return kornia.adjust_contrast(x, contrast_factor=contrast_factor) #Expect image in the range of [0, 1]
+
 def color(x, color_factor):
+    """Adjust color of images.
+
+    Args:
+        x (Tensor): Batch of images.
+        color_factor (Tensor): Color factor for each images. 
+        0.0 gives a black and white image. A factor of 1.0 gives the original image.
+
+    Returns:
+        (Tensor): Batch of adjusted images.
+    """
     (batch_size, channels, h, w) = x.shape
 
     gray_x = kornia.rgb_to_grayscale(x)
@@ -254,11 +307,31 @@ def color(x, color_factor):
     return blend(gray_x, x, color_factor).clamp(min=0.0,max=1.0) #Expect image in the range of [0, 1]
 
 def brightness(x, brightness_factor):
+    """Adjust brightness of images.
+
+    Args:
+        x (Tensor): Batch of images.
+        brightness_factor (Tensor): Brightness factor for each images. 
+        0.0 gives a black image. A factor of 1.0 gives the original image.
+
+    Returns:
+        (Tensor): Batch of adjusted images.
+    """
     device = x.device
 
     return blend(torch.zeros(x.size(), device=device), x, brightness_factor).clamp(min=0.0,max=1.0) #Expect image in the range of [0, 1]
 
 def sharpeness(x, sharpness_factor):
+    """Adjust sharpness of images.
+
+    Args:
+        x (Tensor): Batch of images.
+        sharpness_factor (Tensor): Sharpness factor for each images. 
+        0.0 gives a black image. A factor of 1.0 gives the original image.
+
+    Returns:
+        (Tensor): Batch of adjusted images.
+    """
     device = x.device
     (batch_size, channels, h, w) = x.shape
 
@@ -269,7 +342,6 @@ def sharpeness(x, sharpness_factor):
 
     return blend(smooth_x, x, sharpness_factor).clamp(min=0.0,max=1.0) #Expect image in the range of [0, 1]
 
-#https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageOps.py
 def posterize(x, bits):
   bits = bits.type(torch.uint8) #Perte du gradient
   x = int_image(x) #Expect image in the range of [0, 1]
@@ -365,7 +437,6 @@ def solarize(x, thresholds):
 
   return x
 
-#https://github.com/python-pillow/Pillow/blob/9c78c3f97291bd681bc8637922d6a2fa9415916c/src/PIL/Image.py#L2818
 def blend(x,y,alpha): #out = image1 * (1.0 - alpha) + image2 * alpha
     #return kornia.add_weighted(src1=x, alpha=(1-alpha), src2=y, beta=alpha, gamma=0) #out=src1∗alpha+src2∗beta+gamma #Ne fonctionne pas pour des batch de alpha
 
