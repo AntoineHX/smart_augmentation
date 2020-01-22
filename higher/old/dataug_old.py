@@ -585,7 +585,7 @@ class Data_augV6(nn.Module): #Optimisation sequentielle #Mauvais resultats
             print("Warning : using only fixed set of TF : ", self._fixed_TF)
             self._TF_sets=torch.tensor([self._fixed_TF])
         else: 
-            def generate_TF_sets(n_TF, set_size, idx_prefix=[]):
+            def generate_TF_sets(n_TF, set_size, idx_prefix=[]): #Generate every combinaison (without reuse) of TF
                 TF_sets=[]
                 if len(idx_prefix)!=0:
                     if set_size>2:

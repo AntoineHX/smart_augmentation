@@ -187,20 +187,20 @@ def float_parameter(level, maxval):
             A float that results from scaling `maxval` according to `level`.
     """
 
-  #return float(level) * maxval / PARAMETER_MAX
-  return (level * maxval / PARAMETER_MAX)#.to(torch.float)
+    #return float(level) * maxval / PARAMETER_MAX
+    return (level * maxval / PARAMETER_MAX)#.to(torch.float)
 
 #def int_parameter(level, maxval): #Perte de gradient
-  """Helper function to scale `val` between 0 and maxval .
-  Args:
+    """Helper function to scale `val` between 0 and maxval .
+    Args:
     level: Level of the operation that will be between [0, `PARAMETER_MAX`].
     maxval: Maximum value that the operation can have. This will be scaled
       to level/PARAMETER_MAX.
-  Returns:
+    Returns:
     An int that results from scaling `maxval` according to `level`.
-  """
-  #return int(level * maxval / PARAMETER_MAX)
-#  return (level * maxval / PARAMETER_MAX) 
+    """
+    #return int(level * maxval / PARAMETER_MAX)
+    #  return (level * maxval / PARAMETER_MAX) 
 
 def flipLR(x):
     """Flip horizontaly/Left-Right images.
