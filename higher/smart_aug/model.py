@@ -5,7 +5,13 @@ import torch.nn.functional as F
 
 ## Basic CNN ##
 class LeNet(nn.Module):
+    """Basic CNN.
+
+    """
     def __init__(self, num_inp, num_out):
+        """Init LeNet.
+
+        """
         super(LeNet, self).__init__()
         self.conv1 = nn.Conv2d(num_inp, 20, 5)
         self.pool = nn.MaxPool2d(2, 2)
@@ -15,6 +21,9 @@ class LeNet(nn.Module):
         self.fc2 = nn.Linear(500, num_out)
 
     def forward(self, x):
+        """Main method of LeNet
+
+        """
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool2(F.relu(self.conv2(x)))
         x = x.view(x.size(0), -1)
@@ -23,4 +32,7 @@ class LeNet(nn.Module):
         return x
 
     def __str__(self):
+        """ Get name of model
+
+        """
         return "LeNet"

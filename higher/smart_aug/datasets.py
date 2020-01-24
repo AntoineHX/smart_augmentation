@@ -6,12 +6,17 @@ import torch
 from torch.utils.data import SubsetRandomSampler
 import torchvision
 
+#Train/Validation batch size.
 BATCH_SIZE = 300
-TEST_SIZE = 300 
+#Test batch size.
+TEST_SIZE = BATCH_SIZE 
 #TEST_SIZE = 10000 #legerement +Rapide / + Consomation memoire !
 
+#Wether to download data.
 download_data=False
+#Number of worker to use.
 num_workers=2 #4
+#Pin GPU memory
 pin_memory=False #True :+ GPU memory / + Lent
 
 #ATTENTION : Dataug (Kornia) Expect image in the range of [0, 1]
@@ -37,8 +42,10 @@ transform = torchvision.transforms.Compose([
 #)
 
 ### Classic Dataset ###
+#Training data
 data_train = torchvision.datasets.CIFAR10("../data", train=True, download=download_data, transform=transform)
 #data_val = torchvision.datasets.CIFAR10("../data", train=True, download=download_data, transform=transform)
+#Testing data
 data_test = torchvision.datasets.CIFAR10("../data", train=False, download=download_data, transform=transform)
 
 train_subset_indices=range(int(len(data_train)/2))

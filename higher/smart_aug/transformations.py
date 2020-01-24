@@ -18,15 +18,18 @@ import torch
 import kornia
 import random
 
+#TF that don't have use for magnitude parameter.
+TF_no_mag={'Identity', 'FlipUD', 'FlipLR', 'Random', 'RandBlend'}
+#TF which implemetation doesn't allow gradient propagaition.
+TF_no_grad={'Solarize', 'Posterize', '=Solarize', '=Posterize'}
+#TF for which magnitude should be ignored (Magnitude fixed).
+TF_ignore_mag= TF_no_mag | TF_no_grad 
 
-TF_no_mag={'Identity', 'FlipUD', 'FlipLR', 'Random', 'RandBlend'} #TF that don't have use for magnitude parameter.
-TF_no_grad={'Solarize', 'Posterize', '=Solarize', '=Posterize'} #TF which implemetation doesn't allow gradient propagaition.
-TF_ignore_mag= TF_no_mag | TF_no_grad #TF for which magnitude should be ignored (Magnitude fixed).
+# What is the max 'level' a transform could be predicted
+PARAMETER_MAX = 1
+# What is the min 'level' a transform could be predicted
+PARAMETER_MIN = 0.1 
 
-PARAMETER_MAX = 1  # What is the max 'level' a transform could be predicted
-PARAMETER_MIN = 0.1 # What is the min 'level' a transform could be predicted
-
-### Available TF for Dataug ###
 # Dictionnary mapping tranformations identifiers to their function.
 # Each value of the dict should be a lambda function taking a (batch of data, magnitude of transformations) tuple as input and returns a batch of data.
 TF_dict={ #Dataugv5+
@@ -416,13 +419,16 @@ def blend(x,y,alpha):
     return res
 
 #Not working
-def auto_contrast(x): #PAS OPTIMISE POUR DES BATCH #EXTRA LENT
-  # Optimisation : Application de LUT efficace / Calcul d'histogramme par batch/channel
-  print("Warning : Pas encore check !")
-  (batch_size, channels, h, w) = x.shape
-  x = int_image(x) #Expect image in the range of [0, 1]
-  #print('Start',x[0])
-  for im_idx, img in enumerate(x.chunk(batch_size, dim=0)): #Operation par image
+def auto_contrast(x):
+    """NOT TESTED - EXTRA SLOW
+
+    """
+    # Optimisation : Application de LUT efficace / Calcul d'histogramme par batch/channel
+    print("Warning : Pas encore check !")
+    (batch_size, channels, h, w) = x.shape
+    x = int_image(x) #Expect image in the range of [0, 1]
+    #print('Start',x[0])
+    for im_idx, img in enumerate(x.chunk(batch_size, dim=0)): #Operation par image
     #print(img.shape)
     for chan_idx, chan in enumerate(img.chunk(channels, dim=1)): # Operation par channel
       #print(chan.shape)
@@ -449,19 +455,22 @@ def auto_contrast(x): #PAS OPTIMISE POUR DES BATCH #EXTRA LENT
           chan[chan==ix]=n_ix
           x[im_idx, chan_idx]=chan
 
-  #print('End',x[0])
-  return float_image(x)
+    #print('End',x[0])
+    return float_image(x)
 
-def equalize(x): #PAS OPTIMISE POUR DES BATCH
-  raise Exception(self, "not implemented") 
-  # Optimisation : Application de LUT efficace / Calcul d'histogramme par batch/channel
-  (batch_size, channels, h, w) = x.shape
-  x = int_image(x) #Expect image in the range of [0, 1]
-  #print('Start',x[0])
-  for im_idx, img in enumerate(x.chunk(batch_size, dim=0)): #Operation par image
+def equalize(x):
+    """ NOT WORKING
+
+    """
+    raise Exception(self, "not implemented") 
+    # Optimisation : Application de LUT efficace / Calcul d'histogramme par batch/channel
+    (batch_size, channels, h, w) = x.shape
+    x = int_image(x) #Expect image in the range of [0, 1]
+    #print('Start',x[0])
+    for im_idx, img in enumerate(x.chunk(batch_size, dim=0)): #Operation par image
     #print(img.shape)
     for chan_idx, chan in enumerate(img.chunk(channels, dim=1)): # Operation par channel
       #print(chan.shape)
       hist = torch.histc(chan, bins=256, min=0, max=255) #PAS DIFFERENTIABLE
 
-  return float_image(x)
+    return float_image(x)
