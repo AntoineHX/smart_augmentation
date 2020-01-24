@@ -6,6 +6,66 @@ import higher
 from datasets import *
 from utils import *
 
+def train_classic_higher(model, epochs=1):
+    device = next(model.parameters()).device
+    #opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optim = torch.optim.SGD(model.parameters(), lr=1e-2, momentum=0.9)
+
+    model.train()
+    dl_val_it = iter(dl_val)
+    log = []
+
+    fmodel = higher.patch.monkeypatch(model, device=None, copy_initial_weights=True)
+    diffopt = higher.optim.get_diff_optim(optim, model.parameters(),fmodel=fmodel,track_higher_grads=False)
+    #with higher.innerloop_ctx(model, optim, copy_initial_weights=True, track_higher_grads=False) as (fmodel, diffopt):
+
+    for epoch in range(epochs):
+        #print_torch_mem("Start epoch "+str(epoch))
+        #print("Fast param ",len(fmodel._fast_params))
+        t0 = time.process_time()
+        for i, (features, labels) in enumerate(dl_train):
+            #print_torch_mem("Start iter")
+            features,labels = features.to(device), labels.to(device)
+
+            #optim.zero_grad()
+            logits = model.forward(features)
+            pred = F.log_softmax(logits, dim=1)
+            loss = F.cross_entropy(pred,labels)
+            #.backward()
+            #optim.step()
+            diffopt.step(loss) #(opt.zero_grad, loss.backward, opt.step)
+
+        model_copy(src=fmodel, dst=model, patch_copy=False)
+        optim_copy(dopt=diffopt, opt=optim)
+        fmodel = higher.patch.monkeypatch(model, device=None, copy_initial_weights=True)
+        diffopt = higher.optim.get_diff_optim(optim, model.parameters(),fmodel=fmodel,track_higher_grads=False)
+
+        #### Tests ####
+        tf = time.process_time()
+        try:
+            xs_val, ys_val = next(dl_val_it)
+        except StopIteration: #Fin epoch val
+            dl_val_it = iter(dl_val)
+            xs_val, ys_val = next(dl_val_it)
+        xs_val, ys_val = xs_val.to(device), ys_val.to(device)
+
+        val_loss = F.cross_entropy(model(xs_val), ys_val)
+        accuracy, _ =test(model)
+        model.train()
+        #### Log ####
+        data={
+            "epoch": epoch,
+            "train_loss": loss.item(),
+            "val_loss": val_loss.item(),
+            "acc": accuracy,
+            "time": tf - t0,
+
+            "param": None,
+        }
+        log.append(data)
+
+    return log
+
 def train_classic_tests(model, epochs=1):
     device = next(model.parameters()).device
     #opt = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -147,6 +207,222 @@ def train_classic_tests(model, epochs=1):
     print("Copy ", countcopy)
     return log
 
+
+from torchvision.datasets.vision import VisionDataset
+from PIL import Image
+import augmentation_transforms
+import numpy as np
+class AugmentedDatasetV2(VisionDataset):
+    def __init__(self, root, train=True, transform=None, target_transform=None, download=False, subset=None):
+
+        super(AugmentedDatasetV2, self).__init__(root, transform=transform, target_transform=target_transform)
+
+        supervised_dataset = torchvision.datasets.CIFAR10(root, train=train, download=download, transform=transform)
+
+        self.sup_data = supervised_dataset.data if not subset else supervised_dataset.data[subset[0]:subset[1]]
+        self.sup_targets = supervised_dataset.targets if not subset else supervised_dataset.targets[subset[0]:subset[1]]
+        assert len(self.sup_data)==len(self.sup_targets)
+
+        for idx, img in enumerate(self.sup_data):
+            self.sup_data[idx]= Image.fromarray(img) #to PIL Image
+
+        self.unsup_data=[]
+        self.unsup_targets=[]
+        self.origin_idx=[]
+
+        self.dataset_info= {
+            'name': 'CIFAR10',
+            'sup': len(self.sup_data),
+            'unsup': len(self.unsup_data),
+            'length': len(self.sup_data)+len(self.unsup_data),
+        }
+
+
+        self._TF = [
+            ## Geometric TF ##
+            'Rotate',
+            'TranslateX',
+            'TranslateY',
+            'ShearX',
+            'ShearY',
+
+            'Cutout',
+
+            ## Color TF ##
+            'Contrast',
+            'Color',
+            'Brightness',
+            'Sharpness',
+            'Posterize',
+            'Solarize',
+
+            'Invert',
+            'AutoContrast',
+            'Equalize',
+        ]
+        self._op_list =[]
+        self.prob=0.5
+        self.mag_range=(1, 10)
+        for tf in self._TF:
+            for mag in range(self.mag_range[0], self.mag_range[1]):
+                self._op_list+=[(tf, self.prob, mag)]
+        self._nb_op = len(self._op_list)
+
+    def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (image, target) where target is index of the target class.
+        """
+        aug_img, origin_img, target = self.unsup_data[index], self.sup_data[self.origin_idx[index]], self.unsup_targets[index]
+
+        # doing this so that it is consistent with all other datasets
+        # to return a PIL Image
+        #img = Image.fromarray(img)
+
+        if self.transform is not None:
+            aug_img = self.transform(aug_img)
+            origin_img = self.transform(origin_img)
+
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return aug_img, origin_img, target
+
+    def augement_data(self, aug_copy=1):
+
+        policies = []
+        for op_1 in self._op_list:
+            for op_2 in self._op_list:
+                policies += [[op_1, op_2]]
+
+        for idx, image in enumerate(self.sup_data):
+            if idx%(self.dataset_info['sup']/5)==0: print("Augmenting data... ", idx,"/", self.dataset_info['sup'])
+            #if idx==10000:break
+
+            for _ in range(aug_copy):
+                chosen_policy = policies[np.random.choice(len(policies))]
+                aug_image = augmentation_transforms.apply_policy(chosen_policy, image, use_mean_std=False) #Cast en float image
+                #aug_image = augmentation_transforms.cutout_numpy(aug_image)
+
+                self.unsup_data+=[(aug_image*255.).astype(self.sup_data.dtype)]#Cast float image to uint8
+                self.unsup_targets+=[self.sup_targets[idx]]
+                self.origin_idx+=[idx]
+
+        #self.unsup_data=(np.array(self.unsup_data)*255.).astype(self.sup_data.dtype) #Cast float image to uint8
+        self.unsup_data=np.array(self.unsup_data)
+        
+        assert len(self.unsup_data)==len(self.unsup_targets)
+       
+        self.dataset_info['unsup']=len(self.unsup_data)
+        self.dataset_info['length']=self.dataset_info['sup']+self.dataset_info['unsup']
+
+
+    def __len__(self):
+        return self.dataset_info['unsup']#self.dataset_info['length']
+
+    def __str__(self):
+        return "CIFAR10(Sup:{}-Unsup:{}-{}TF(Mag{}-{}))".format(self.dataset_info['sup'], self.dataset_info['unsup'], len(self._TF), self.mag_range[0], self.mag_range[1])
+
+def train_UDA(model, dl_unsup, opt_param, epochs=1, print_freq=1):
+    """Training of a model using UDA inspired approach.
+
+            Intended to be used alongside an already augmented dataset (see AugmentedDatasetV2).
+            
+        Args:
+            model (nn.Module): Model to train.
+            dl_unsup (Dataloader): Data loader of unsupervised/augmented data.
+            opt_param (dict): Dictionnary containing optimizers parameters.
+            epochs (int): Number of epochs to perform. (default: 1)
+            print_freq (int): Number of epoch between display of the state of training. If set to None, no display will be done. (default:1)
+
+        Returns:
+            (list) Logs of training. Each items is a dict containing results of an epoch.
+    """
+    device = next(model.parameters()).device
+    #opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+    opt = torch.optim.SGD(model.parameters(), lr=opt_param['Inner']['lr'], momentum=opt_param['Inner']['momentum']) #lr=1e-2 / momentum=0.9
+
+
+    model.train()
+    dl_val_it = iter(dl_val)
+    dl_unsup_it =iter(dl_unsup)
+    log = []
+    for epoch in range(epochs):
+        #print_torch_mem("Start epoch")
+        t0 = time.process_time()
+        for i, (features, labels) in enumerate(dl_train):
+            #print_torch_mem("Start iter")
+            features,labels = features.to(device), labels.to(device)
+
+            optim.zero_grad()
+            #Supervised
+            logits = model.forward(features)
+            pred = F.log_softmax(logits, dim=1)
+            sup_loss = F.cross_entropy(pred,labels)
+
+            #Unsupervised
+            try:
+                aug_xs, origin_xs, ys = next(dl_unsup_it)
+            except StopIteration: #Fin epoch val
+                dl_unsup_it =iter(dl_unsup)
+                aug_xs, origin_xs, ys = next(dl_unsup_it)
+            aug_xs, origin_xs, ys = aug_xs.to(device), origin_xs.to(device), ys.to(device)
+
+            #print(aug_xs.shape, origin_xs.shape, ys.shape)
+            sup_logits = model.forward(origin_xs)
+            unsup_logits = model.forward(aug_xs)
+
+            log_sup=F.log_softmax(sup_logits, dim=1)
+            log_unsup=F.log_softmax(unsup_logits, dim=1)
+            #KL div w/ logits
+            unsup_loss = F.softmax(sup_logits, dim=1)*(log_sup-log_unsup)
+            unsup_loss=unsup_loss.sum(dim=-1).mean()
+
+            #print(unsup_loss)
+            unsupp_coeff = 1
+            loss = sup_loss + unsup_loss * unsupp_coeff
+
+            loss.backward()
+            optim.step()
+
+        #### Tests ####
+        tf = time.process_time()
+        try:
+            xs_val, ys_val = next(dl_val_it)
+        except StopIteration: #Fin epoch val
+            dl_val_it = iter(dl_val)
+            xs_val, ys_val = next(dl_val_it)
+        xs_val, ys_val = xs_val.to(device), ys_val.to(device)
+
+        val_loss = F.cross_entropy(model(xs_val), ys_val)
+        accuracy, _ =test(model)
+        model.train()
+
+        #### Print ####
+        if(print_freq and epoch%print_freq==0):
+            print('-'*9)
+            print('Epoch : %d/%d'%(epoch,epochs))
+            print('Time : %.00f'%(tf - t0))
+            print('Train loss :',loss.item(), '/ val loss', val_loss.item())
+            print('Sup Loss :', sup_loss.item(), '/ unsup_loss :', unsup_loss.item())
+            print('Accuracy :', accuracy)
+
+        #### Log ####
+        data={
+            "epoch": epoch,
+            "train_loss": loss.item(),
+            "val_loss": val_loss.item(),
+            "acc": accuracy,
+            "time": tf - t0,
+
+            "param": None,
+        }
+        log.append(data)
+
+    return log
 
 
 def run_simple_dataug(inner_it, epochs=1):

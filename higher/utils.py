@@ -121,7 +121,7 @@ def viz_sample_data(imgs, labels, fig_name='data_sample', weight_labels=None):
 
     plt.figure(figsize=(10,10))
     for i in range(25):
-        plt.subplot(5,5,i+1)
+        plt.subplot(5,5,i+1) #Trop de figure cree ?
         plt.xticks([])
         plt.yticks([])
         plt.grid(False)
@@ -132,7 +132,7 @@ def viz_sample_data(imgs, labels, fig_name='data_sample', weight_labels=None):
 
     plt.savefig(fig_name)
     print("Sample saved :", fig_name)
-    plt.close()
+    plt.close('all')
 
 def print_torch_mem(add_info=''):
 
