@@ -1,3 +1,7 @@
+""" Dataset definition.
+
+    MNIST / CIFAR10
+"""
 import torch
 from torch.utils.data import SubsetRandomSampler
 import torchvision
@@ -28,14 +32,14 @@ transform = torchvision.transforms.Compose([
 #            torchvision.transforms.ToTensor()
 #        ])
 #)
-data_test = torchvision.datasets.MNIST(
-    "./data", train=False, download=True, transform=torchvision.transforms.ToTensor()
-)
+#data_test = torchvision.datasets.MNIST(
+#    "./data", train=False, download=True, transform=torchvision.transforms.ToTensor()
+#)
 
 ### Classic Dataset ###
-data_train = torchvision.datasets.CIFAR10("./data", train=True, download=download_data, transform=transform)
-#data_val = torchvision.datasets.CIFAR10("./data", train=True, download=download_data, transform=transform)
-data_test = torchvision.datasets.CIFAR10("./data", train=False, download=download_data, transform=transform)
+data_train = torchvision.datasets.CIFAR10("../data", train=True, download=download_data, transform=transform)
+#data_val = torchvision.datasets.CIFAR10("../data", train=True, download=download_data, transform=transform)
+data_test = torchvision.datasets.CIFAR10("../data", train=False, download=download_data, transform=transform)
 
 train_subset_indices=range(int(len(data_train)/2))
 val_subset_indices=range(int(len(data_train)/2),len(data_train))

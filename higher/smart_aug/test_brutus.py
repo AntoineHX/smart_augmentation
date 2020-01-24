@@ -93,7 +93,7 @@ if __name__ == "__main__":
         json.dump(out, f, indent=True)
         print('Log :\"',f.name, '\" saved !')
     '''
-    res_folder="res/brutus-tests2/"
+    res_folder="../res/brutus-tests2/"
     epochs= 150
     inner_its = [1]
     dist_mix = [0.0, 0.5, 0.8, 1.0]
@@ -147,14 +147,14 @@ if __name__ == "__main__":
                             out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param, "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
                             print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
                             filename = "{}-{} epochs (dataug:{})- {} in_it-{}".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter, run)
-                            with open("res/log/%s.json" % filename, "w+") as f:
+                            with open("../res/log/%s.json" % filename, "w+") as f:
                                 try:
                                     json.dump(out, f, indent=True)
                                     print('Log :\"',f.name, '\" saved !')
                                 except:
                                     print("Failed to save logs :",f.name)
                             try:
-                                plot_resV2(log, fig_name="res/"+filename, param_names=aug_model.TF_names())
+                                plot_resV2(log, fig_name="../res/"+filename, param_names=aug_model.TF_names())
                             except:
                                 print("Failed to plot res")
 
