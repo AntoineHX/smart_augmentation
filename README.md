@@ -12,3 +12,5 @@
 # Example Usage
 
 Look to 'test_dataug.py'
+
+![alt text](smart_aug_optim.png "Optim")
