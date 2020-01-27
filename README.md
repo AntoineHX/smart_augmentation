@@ -13,4 +13,6 @@
 
 Look to 'test_dataug.py'
 
-![alt text](smart_aug_optim.png "Optim")
+![Optimization process](docs/smart_aug_optim.png "Optimization process")
+![Forward data augmentation](docs/smart_aug_forward.png "Forward data augmentation")
+![UML](docs/smart_aug_uml.png "UML")
