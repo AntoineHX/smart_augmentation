@@ -429,31 +429,31 @@ def auto_contrast(x):
     x = int_image(x) #Expect image in the range of [0, 1]
     #print('Start',x[0])
     for im_idx, img in enumerate(x.chunk(batch_size, dim=0)): #Operation par image
-    #print(img.shape)
-    for chan_idx, chan in enumerate(img.chunk(channels, dim=1)): # Operation par channel
-      #print(chan.shape)
-      hist = torch.histc(chan, bins=256, min=0, max=255) #PAS DIFFERENTIABLE
+        #print(img.shape)
+        for chan_idx, chan in enumerate(img.chunk(channels, dim=1)): # Operation par channel
+            #print(chan.shape)
+            hist = torch.histc(chan, bins=256, min=0, max=255) #PAS DIFFERENTIABLE
 
-      # find lowest/highest samples after preprocessing
-      for lo in range(256):
-          if hist[lo]:
-              break
-      for hi in range(255, -1, -1):
-          if hist[hi]:
-              break
-      if hi <= lo:
-          # don't bother
-          pass
-      else:
-        scale = 255.0 / (hi - lo)
-        offset = -lo * scale
-        for ix in range(256):
-          n_ix = int(ix * scale + offset)
-          if n_ix < 0: n_ix = 0
-          elif n_ix > 255: n_ix = 255
+            # find lowest/highest samples after preprocessing
+            for lo in range(256):
+                if hist[lo]:
+                    break
+            for hi in range(255, -1, -1):
+                if hist[hi]:
+                    break
+                if hi <= lo:
+                    # don't bother
+                    pass
+            else:
+                scale = 255.0 / (hi - lo)
+                offset = -lo * scale
+                for ix in range(256):
+                    n_ix = int(ix * scale + offset)
+                    if n_ix < 0: n_ix = 0
+                    elif n_ix > 255: n_ix = 255
 
-          chan[chan==ix]=n_ix
-          x[im_idx, chan_idx]=chan
+            chan[chan==ix]=n_ix
+            x[im_idx, chan_idx]=chan
 
     #print('End',x[0])
     return float_image(x)
@@ -468,9 +468,9 @@ def equalize(x):
     x = int_image(x) #Expect image in the range of [0, 1]
     #print('Start',x[0])
     for im_idx, img in enumerate(x.chunk(batch_size, dim=0)): #Operation par image
-    #print(img.shape)
-    for chan_idx, chan in enumerate(img.chunk(channels, dim=1)): # Operation par channel
-      #print(chan.shape)
-      hist = torch.histc(chan, bins=256, min=0, max=255) #PAS DIFFERENTIABLE
+        #print(img.shape)
+        for chan_idx, chan in enumerate(img.chunk(channels, dim=1)): # Operation par channel
+            #print(chan.shape)
+            hist = torch.histc(chan, bins=256, min=0, max=255) #PAS DIFFERENTIABLE
 
     return float_image(x)
