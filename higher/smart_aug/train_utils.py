@@ -363,3 +363,99 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
         pass
 
     return log
+
+def run_simple_smartaug(model, opt_param, epochs=1, inner_it=1, print_freq=1, unsup_loss=1, save_sample_freq=None):
+    """Simple training of an augmented model with higher.
+
+            This function is intended to be used with Augmented_model containing an Higher_model (see dataug.py).
+            Ex : Augmented_model(Data_augV5(...), Higher_model(model))
+
+            Training loss can either be computed directly from augmented inputs (unsup_loss=0).
+            However, it is recommended to use the mixed loss computation, which combine original and augmented inputs to compute the loss (unsup_loss>0).
+
+        Args:
+            model (nn.Module): Augmented model to train.
+            opt_param (dict): Dictionnary containing optimizers parameters.
+            epochs (int): Number of epochs to perform. (default: 1)
+            inner_it (int): Number of inner iteration before a meta-step. 0 inner iteration means there's no meta-step. (default: 1)
+            print_freq (int): Number of epoch between display of the state of training. If set to None, no display will be done. (default:1)
+            unsup_loss (float): Proportion of the unsup_loss loss added to the supervised loss. If set to 0, the loss is only computed on augmented inputs. (default: 1)
+            save_sample_freq (int): Number of epochs between saves of samples of data. If set to None, only one save would be done at the end of the training. (default: None)
+
+        Returns:
+            (list) Logs of training. Each items is a dict containing results of an epoch.
+    """
+    device = next(model.parameters()).device
+    log = []
+
+    ## Optimizers ##
+    hyper_param = list(model['data_aug'].parameters())
+    model.start_bilevel_opt(inner_it=inner_it, hp_list=hyper_param, opt_param=opt_param, dl_val=dl_val)
+
+    model.train()
+
+    for epoch in range(1, epochs+1):
+        t0 = time.process_time()
+       
+        for i, (xs, ys) in enumerate(dl_train):
+            xs, ys = xs.to(device), ys.to(device)
+            
+            #Methode mixed
+            loss = mixed_loss(xs, ys, model, unsup_factor=unsup_loss)
+
+            model.step(loss) #(opt.zero_grad, loss.backward, opt.step) + automatic meta-optimisation
+                
+        tf = time.process_time()
+
+        if (save_sample_freq and epoch%save_sample_freq==0): #Data sample saving
+                try:
+                    viz_sample_data(imgs=xs, labels=ys, fig_name='../samples/data_sample_epoch{}_noTF'.format(epoch))
+                    viz_sample_data(imgs=model['data_aug'](xs), labels=ys, fig_name='../samples/data_sample_epoch{}'.format(epoch))
+                except:
+                    print("Couldn't save samples epoch"+epoch)
+                    pass
+
+        val_loss = model._val_loss
+        # Test model
+        accuracy, test_loss =test(model)
+        model.train()
+
+        #### Log ####
+        param = [{'p': p.item(), 'm':model['data_aug']['mag'].item()} for p in model['data_aug']['prob']] if model['data_aug']._shared_mag else [{'p': p.item(), 'm': m.item()} for p, m in zip(model['data_aug']['prob'], model['data_aug']['mag'])]
+        data={
+            "epoch": epoch,
+            "train_loss": loss.item(),
+            "val_loss": val_loss.item(),
+            "acc": accuracy,
+            "time": tf - t0,
+
+            "mix_dist": model['data_aug']['mix_dist'].item(),
+            "param": param,
+        }
+        log.append(data)
+        #############
+        #### Print ####
+        if(print_freq and epoch%print_freq==0):
+            print('-'*9)
+            print('Epoch : %d/%d'%(epoch,epochs))
+            print('Time : %.00f'%(tf - t0))
+            print('Train loss :',loss.item(), '/ val loss', val_loss.item())
+            print('Accuracy :', max([x["acc"] for x in log]))
+            print('Data Augmention : {} (Epoch {})'.format(model._data_augmentation, 0))
+            if not model['data_aug']._fixed_prob: print('TF Proba :', model['data_aug']['prob'].data)
+            #print('proba grad',model['data_aug']['prob'].grad)
+            if not model['data_aug']._fixed_mag: print('TF Mag :', model['data_aug']['mag'].data)
+            #print('Mag grad',model['data_aug']['mag'].grad)
+            if not model['data_aug']._fixed_mix: print('Mix:', model['data_aug']['mix_dist'].item())
+            #print('Reg loss:', model['data_aug'].reg_loss().item())
+        #############
+
+    #Data sample saving
+    try:
+        viz_sample_data(imgs=xs, labels=ys, fig_name='../samples/data_sample_epoch{}_noTF'.format(epoch))
+        viz_sample_data(imgs=model['data_aug'](xs), labels=ys, fig_name='../samples/data_sample_epoch{}'.format(epoch))
+    except:
+        print("Couldn't save finals samples")
+        pass
+
+    return log

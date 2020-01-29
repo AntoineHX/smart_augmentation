@@ -870,6 +870,8 @@ class Higher_model(nn.Module):
         """
         return self._name
 
+from utils import clip_norm 
+from train_utils import compute_vaLoss
 class Augmented_model(nn.Module):
     """Wrapper for a Data Augmentation module and a model.
 
@@ -916,6 +918,70 @@ class Augmented_model(nn.Module):
         """
         self._data_augmentation=mode
         self._mods['data_aug'].augment(mode)
+
+    def start_bilevel_opt(self, inner_it, hp_list, opt_param, dl_val):
+
+        if inner_it==0 or len(hp_list)==0: #No meta-opt
+            print("No meta optimization")
+
+            self._diffopt = model['model'].get_diffopt(
+                inner_opt, 
+                grad_callback=(lambda grads: clip_norm(grads, max_norm=10)),
+                track_higher_grads=False)
+
+        else: #Bi-level opt
+            print("Bi-Level optimization")
+            self._it_count=0
+            self._in_it=inner_it
+
+            self._opt_param=opt_param
+            #Inner Opt
+            inner_opt = torch.optim.SGD(self._mods['model']['original'].parameters(), lr=opt_param['Inner']['lr'], momentum=opt_param['Inner']['momentum']) #lr=1e-2 / momentum=0.9
+
+            self._diffopt = self._mods['model'].get_diffopt(
+                inner_opt, 
+                grad_callback=(lambda grads: clip_norm(grads, max_norm=10)),
+                track_higher_grads=True)
+
+            #Meta Opt
+            self._meta_opt = torch.optim.Adam(hp_list, lr=opt_param['Meta']['lr'])
+
+            self._dl_val=dl_val
+            self._dl_val_it=iter(dl_val)
+            self._val_loss=0.
+
+            self._meta_opt.zero_grad()
+
+    def step(self, loss):
+
+        self._it_count+=1
+        self._diffopt.step(loss) #(opt.zero_grad, loss.backward, opt.step)
+        
+        if(self._meta_opt and self._it_count>0 and self._it_count%self._in_it==0): #Perform Meta step
+            #print("meta")
+            self._val_loss = compute_vaLoss(model=self._mods['model'], dl_it=self._dl_val_it, dl=self._dl_val) + self._mods['data_aug'].reg_loss()
+            #print_graph(val_loss) #to visualize computational graph
+            self._val_loss.backward()
+
+            torch.nn.utils.clip_grad_norm_(self._mods['data_aug'].parameters(), max_norm=10, norm_type=2) #Prevent exploding grad with RNN
+
+            self._meta_opt.step()
+
+            #Adjust Hyper-parameters
+            self._mods['data_aug'].adjust_param(soft=False) #Contrainte sum(proba)=1
+            
+            #For optimizer parameters, if needed
+            #for param_group in self._diffopt.param_groups: 
+            #    for param in list(self._opt_param['Inner'].keys())[1:]:
+            #        param_group[param].data = param_group[param].data.clamp(min=1e-4)
+
+            #Reset gradients
+            self._diffopt.detach_()
+            self._mods['model'].detach_()
+            self._meta_opt.zero_grad()
+
+            self._it_count=0
+
 
     def train(self, mode=True):
         """ Set the module training mode.
