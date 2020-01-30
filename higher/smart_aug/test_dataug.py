@@ -53,10 +53,6 @@ tf_names = [
 
     #'Random',
     #'RandBlend'
-
-    #Non fonctionnel
-    #'Auto_Contrast', #Pas opti pour des batch (Super lent)
-    #'Equalize',
 ]
 
 
@@ -66,6 +62,12 @@ if device == torch.device('cpu'):
     device_name = 'CPU'
 else:
     device_name = torch.cuda.get_device_name(device)
+
+torch.backends.cudnn.benchmark = True #Faster if same input size #Not recommended for reproductibility
+
+#Increase reproductibility
+torch.manual_seed(0)
+np.random.seed(0)
 
 ##########################################
 if __name__ == "__main__":
@@ -78,7 +80,7 @@ if __name__ == "__main__":
     }
     #Parameters
     n_inner_iter = 1
-    epochs = 1
+    epochs = 150
     dataug_epoch_start=0
     optim_param={
         'Meta':{
@@ -95,9 +97,8 @@ if __name__ == "__main__":
     #Models
     model = LeNet(3,10)
     #model = ResNet(num_classes=10)
-    #Lents
-    #model = MobileNetV2(num_classes=10)
-    #model = WideResNet(num_classes=10, wrn_size=32)
+    #import torchvision.models as models
+    #model=models.resnet18()
 
     #### Classic ####
     if 'classic' in tasks:
@@ -105,7 +106,7 @@ if __name__ == "__main__":
         model = model.to(device)
 
         print("{} on {} for {} epochs".format(str(model), device_name, epochs))
-        log= train_classic(model=model, opt_param=optim_param, epochs=epochs, print_freq=1)
+        log= train_classic(model=model, opt_param=optim_param, epochs=epochs, print_freq=20)
         #log= train_classic_higher(model=model, epochs=epochs)
 
         exec_time=time.process_time() - t0
@@ -130,11 +131,10 @@ if __name__ == "__main__":
 
         tf_dict = {k: TF.TF_dict[k] for k in tf_names}
         model = Higher_model(model) #run_dist_dataugV3
-        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=0.8, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
+        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.8, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
         #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 
         print("{} on {} for {} epochs - {} inner_it".format(str(aug_model), device_name, epochs, n_inner_iter))
-        log= run_simple_smartaug(model=aug_model, epochs=epochs, inner_it=n_inner_iter, opt_param=optim_param)
         log= run_dist_dataugV3(model=aug_model,
              epochs=epochs, 
              inner_it=n_inner_iter, 
@@ -142,7 +142,8 @@ if __name__ == "__main__":
              opt_param=optim_param,
              print_freq=1, 
              unsup_loss=1, 
-             hp_opt=False)
+             hp_opt=False,
+             save_sample_freq=None)
 
         exec_time=time.process_time() - t0
         ####

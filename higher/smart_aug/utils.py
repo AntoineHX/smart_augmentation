@@ -131,6 +131,7 @@ def viz_sample_data(imgs, labels, fig_name='data_sample', weight_labels=None):
             fig_name (string): Relative path where to save the graph. (default: data_sample)
             weight_labels (Tensor): Weights associated to each labels. (default: None)
     """
+
     sample = imgs[0:25,].permute(0, 2, 3, 1).squeeze().cpu()
 
     plt.figure(figsize=(10,10))
