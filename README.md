@@ -13,10 +13,10 @@ It's also possible to use the, non-differentiable, data augmentation module 'Ran
 * Python version >= 3.5
 * PyTorch version >= 1.3
 * Kornia version >= 0.2.0
-* Higher version >=
+* Higher version >= 0.1.5
 
 * Optionnal:
-..* matplot >=
+..* matplot >= 3.1.1
 
 ## Kornia
 
@@ -101,4 +101,6 @@ We rely on the 'Higher' library to solve this bi-level optimisation problem. See
 
 ## Code example
 
-An example use of Smart_aug can be found in 'test_dataug.py' with Augmented model, and 'run_dist_dataugV3' in 'train_utils.py'.
+An example use of Smart_aug can be found in 'smart_aug_example.py', and 'run_simple_smartaug' in 'train_utils.py'.
+
+For more control over the optimization process see 'test_dataug.py' and 'run_dist_dataugV3' in 'train_utils.py'.
