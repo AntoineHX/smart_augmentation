@@ -13,7 +13,7 @@ TEST_SIZE = BATCH_SIZE
 #TEST_SIZE = 10000 #legerement +Rapide / + Consomation memoire !
 
 #Wether to download data.
-download_data=False
+download_data=True
 #Number of worker to use.
 num_workers=2 #4
 #Pin GPU memory
