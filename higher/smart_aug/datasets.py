@@ -30,13 +30,13 @@ transform = torchvision.transforms.Compose([
 #    torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)), #CIFAR10
 ])
 
-from RandAugment import RandAugment
-# Add RandAugment with N, M(hyperparameter)
 transform_train = torchvision.transforms.Compose([
     #transforms.RandomHorizontalFlip(),
     #transforms.RandomVerticalFlip(),
     torchvision.transforms.ToTensor(),
 ])
+#from RandAugment import RandAugment
+# Add RandAugment with N, M(hyperparameter)
 #transform_train.transforms.insert(0, RandAugment(n=2, m=30))
 
 ### Classic Dataset ###
