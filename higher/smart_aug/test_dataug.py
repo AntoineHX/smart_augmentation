@@ -2,7 +2,7 @@
 
 """
 
-from model import *
+from LeNet import *
 from dataug import *
 #from utils import *
 from train_utils import *
@@ -13,19 +13,19 @@ tf_names = [
     'Identity',
     'FlipUD',
     'FlipLR',
-    'Rotate',
-    'TranslateX',
-    'TranslateY',
-    'ShearX',
-    'ShearY',
+    #'Rotate',
+    #'TranslateX',
+    #'TranslateY',
+    #'ShearX',
+    #'ShearY',
 
     ## Color TF (Expect image in the range of [0, 1]) ##
-    'Contrast',
-    'Color',
-    'Brightness',
-    'Sharpness',
-    'Posterize',
-    'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
+    #'Contrast',
+    #'Color',
+    #'Brightness',
+    #'Sharpness',
+    #'Posterize',
+    #'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
 
     #Color TF (Common mag scale)
     #'+Contrast',
@@ -76,7 +76,6 @@ if __name__ == "__main__":
     tasks={
         #'classic',
         'aug_model'
-        #'aug_dataset', #Moved to old code
     }
     #Parameters
     n_inner_iter = 1
@@ -131,7 +130,7 @@ if __name__ == "__main__":
 
         tf_dict = {k: TF.TF_dict[k] for k in tf_names}
         model = Higher_model(model) #run_dist_dataugV3
-        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=2, mix_dist=0.8, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
+        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=0.8, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
         #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 
         print("{} on {} for {} epochs - {} inner_it".format(str(aug_model), device_name, epochs, n_inner_iter))
@@ -140,7 +139,7 @@ if __name__ == "__main__":
              inner_it=n_inner_iter, 
              dataug_epoch_start=dataug_epoch_start, 
              opt_param=optim_param,
-             print_freq=1, 
+             print_freq=20, 
              unsup_loss=1, 
              hp_opt=False,
              save_sample_freq=None)
@@ -165,55 +164,3 @@ if __name__ == "__main__":
 
         print('Execution Time : %.00f '%(exec_time))
         print('-'*9)
-
-    #### Augmented Dataset ####
-    '''
-    if 'aug_dataset' in tasks:
-
-        t0 = time.process_time()
-
-        #data_train_aug = AugmentedDataset("./data", train=True, download=download_data, transform=transform, subset=(0,int(len(data_train)/2)))
-        #data_train_aug.augement_data(aug_copy=30)
-        #print(data_train_aug)
-        #dl_train = torch.utils.data.DataLoader(data_train_aug, batch_size=BATCH_SIZE, shuffle=True)
-
-        #xs, ys = next(iter(dl_train))
-        #viz_sample_data(imgs=xs, labels=ys, fig_name='samples/data_sample_{}'.format(str(data_train_aug)))
-
-        #model = model.to(device)
-
-        #print("{} on {} for {} epochs".format(str(model), device_name, epochs))
-        #log= train_classic(model=model, epochs=epochs, print_freq=10)
-        ##log= train_classic_higher(model=model, epochs=epochs)
-
-        data_train_aug = AugmentedDatasetV2("./data", train=True, download=download_data, transform=transform, subset=(0,int(len(data_train)/2)))
-        data_train_aug.augement_data(aug_copy=1)
-        print(data_train_aug)
-        unsup_ratio = 5
-        dl_unsup = torch.utils.data.DataLoader(data_train_aug, batch_size=BATCH_SIZE*unsup_ratio, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
-
-        unsup_xs, sup_xs, ys = next(iter(dl_unsup))
-        viz_sample_data(imgs=sup_xs, labels=ys, fig_name='samples/data_sample_{}'.format(str(data_train_aug)))
-        viz_sample_data(imgs=unsup_xs, labels=ys, fig_name='samples/data_sample_{}_unsup'.format(str(data_train_aug)))
-
-        model = model.to(device)
-
-        print("{} on {} for {} epochs".format(str(model), device_name, epochs))
-        log= train_UDA(model=model, dl_unsup=dl_unsup, epochs=epochs, opt_param=optim_param, print_freq=10)
-
-        exec_time=time.process_time() - t0
-        ####
-        print('-'*9)
-        times = [x["time"] for x in log]
-        out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param['Inner'], "Device": device_name, "Param_names": data_train_aug._TF, "Log": log}
-        print(str(model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-        filename = "{}-{}-{} epochs".format(str(data_train_aug),str(model),epochs)
-        with open("res/log/%s.json" % filename, "w+") as f:
-            json.dump(out, f, indent=True)
-            print('Log :\"',f.name, '\" saved !')
-
-        plot_res(log, fig_name="res/"+filename)
-
-        print('Execution Time : %.00f '%(exec_time))
-        print('-'*9)
-    '''

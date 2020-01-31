@@ -1,4 +1,3 @@
-from model import *
 from dataug import *
 #from utils import *
 from train_utils import *
@@ -19,9 +18,9 @@ optim_param={
     }
 }
 
-res_folder="../res/benchmark/CIFAR10"
-epochs= 200
-dataug_epoch_starts=0
+res_folder="../res/benchmark/CIFAR10/"
+epochs= 150
+dataug_epoch_start=0
 
 # Use available TF (see transformations.py)
 tf_names = [
@@ -131,7 +130,6 @@ if __name__ == "__main__":
     ### HP Search ###
     inner_its = [1]
     dist_mix = [0.0, 0.5, 0.8, 1.0]
-    dataug_epoch_starts= [0]
     N_seq_TF= [2, 3, 4]
     mag_setup = [(True,True), (False, False)] #(FxSh, Independant)
     #prob_setup = [True, False]
@@ -154,7 +152,7 @@ if __name__ == "__main__":
 
                             t0 = time.process_time()
 
-                            model = getattr(model_list.keys()[0], 'resnet18')(pretrained=False)
+                            model = getattr(models.resnet, 'resnet18')(pretrained=False)
                             model = Higher_model(model) #run_dist_dataugV3
                             aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=n_tf, mix_dist=dist, fixed_prob=p_setup, fixed_mag=m_setup[0], shared_mag=m_setup[1]), model).to(device)
                             #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
@@ -177,7 +175,7 @@ if __name__ == "__main__":
                             out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param, "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
                             print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
                             filename = "{}-{} epochs (dataug:{})- {} in_it-{}".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter, run)
-                            with open("../res/log/%s.json" % filename, "w+") as f:
+                            with open(res_folder+"log/%s.json" % filename, "w+") as f:
                                 try:
                                     json.dump(out, f, indent=True)
                                     print('Log :\"',f.name, '\" saved !')

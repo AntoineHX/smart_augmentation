@@ -35,7 +35,7 @@ class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
             _TF (list) : List of TF names.
             _nb_tf (int) : Number of TF used.
             _N_seqTF (int) : Number of TF to be applied sequentially to each inputs
-            _shared_mag (bool) : Wether to share a single magnitude parameters for all TF.
+            _shared_mag (bool) : Wether to share a single magnitude parameters for all TF. Beware using shared mag with basic color TF as their lowest magnitude is at PARAMETER_MAX/2.
             _fixed_mag (bool): Wether to lock the TF magnitudes.
             _fixed_prob (bool): Wether to lock the TF probabilies.
             _samples (list): Sampled TF index during last forward pass.
@@ -320,7 +320,7 @@ class Data_augV7(nn.Module): #Proba sequentielles
             _TF (list) : List of TF names.
             _nb_tf (int) : Number of TF used.
             _N_seqTF (int) : Number of TF to be applied sequentially to each inputs
-            _shared_mag (bool) : Wether to share a single magnitude parameters for all TF.
+            _shared_mag (bool) : Wether to share a single magnitude parameters for all TF. Beware using shared mag with basic color TF as their lowest magnitude is at PARAMETER_MAX/2.
             _fixed_mag (bool): Wether to lock the TF magnitudes.
             _fixed_prob (bool): Wether to lock the TF probabilies.
             _samples (list): Sampled TF index during last forward pass.
