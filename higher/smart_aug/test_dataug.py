@@ -79,7 +79,7 @@ if __name__ == "__main__":
     }
     #Parameters
     n_inner_iter = 1
-    epochs = 150
+    epochs = 2
     dataug_epoch_start=0
     optim_param={
         'Meta':{
@@ -156,7 +156,7 @@ if __name__ == "__main__":
              inner_it=n_inner_iter, 
              dataug_epoch_start=dataug_epoch_start, 
              opt_param=optim_param,
-             print_freq=20, 
+             print_freq=1, 
              unsup_loss=1, 
              hp_opt=False,
              save_sample_freq=None)
