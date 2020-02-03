@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     #### Classic ####
     if 'classic' in tasks:
-        t0 = time.process_time()
+        t0 = time.perf_counter()
         model = model.to(device)
 
 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         log= train_classic(model=model, opt_param=optim_param, epochs=epochs, print_freq=1)
         #log= train_classic_higher(model=model, epochs=epochs)
 
-        exec_time=time.process_time() - t0
+        exec_time=time.perf_counter() - t0
         max_cached = torch.cuda.max_memory_cached()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved()
         ####
         print('-'*9)
@@ -138,12 +138,12 @@ if __name__ == "__main__":
             print("Failed to plot res")
             print(sys.exc_info()[1])
 
-        print('Execution Time : %.00f '%(exec_time))
+        print('Execution Time (s): %.00f '%(exec_time))
         print('-'*9)
 
     #### Augmented Model ####
     if 'aug_model' in tasks:
-        t0 = time.process_time()
+        t0 = time.perf_counter()
 
         tf_dict = {k: TF.TF_dict[k] for k in tf_names}
         model = Higher_model(model, model_name) #run_dist_dataugV3
@@ -161,7 +161,7 @@ if __name__ == "__main__":
              hp_opt=False,
              save_sample_freq=None)
 
-        exec_time=time.process_time() - t0
+        exec_time=time.perf_counter() - t0
         max_cached = torch.cuda.max_memory_cached()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved()
         ####
         print('-'*9)
@@ -188,5 +188,5 @@ if __name__ == "__main__":
             print("Failed to plot res")
             print(sys.exc_info()[1])
 
-        print('Execution Time : %.00f '%(exec_time))
+        print('Execution Time (s): %.00f '%(exec_time))
         print('-'*9)
