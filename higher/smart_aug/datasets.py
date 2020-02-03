@@ -4,6 +4,7 @@
 """
 import torch
 from torch.utils.data import SubsetRandomSampler
+from torch.utils.data.dataset import ConcatDataset
 import torchvision
 
 #Train/Validation batch size.
@@ -40,14 +41,34 @@ transform_train = torchvision.transforms.Compose([
 #transform_train.transforms.insert(0, RandAugment(n=2, m=30))
 
 ### Classic Dataset ###
+dataroot="../data"
+
 #MNIST
-#data_train = torchvision.datasets.MNIST("../data", train=True, download=True, transform=transform_train)
-#data_val = torchvision.datasets.MNIST("../data", train=True, download=True, transform=transform)
-#data_test = torchvision.datasets.MNIST("../data", train=False, download=True, transform=transform)
+#data_train = torchvision.datasets.MNIST(dataroot, train=True, download=True, transform=transform_train)
+#data_val = torchvision.datasets.MNIST(dataroot, train=True, download=True, transform=transform)
+#data_test = torchvision.datasets.MNIST(dataroot, train=False, download=True, transform=transform)
+
 #CIFAR
-data_train = torchvision.datasets.CIFAR10("../data", train=True, download=download_data, transform=transform_train)
-#data_val = torchvision.datasets.CIFAR10("../data", train=True, download=download_data, transform=transform)
-data_test = torchvision.datasets.CIFAR10("../data", train=False, download=download_data, transform=transform)
+data_train = torchvision.datasets.CIFAR10(dataroot, train=True, download=download_data, transform=transform_train)
+#data_val = torchvision.datasets.CIFAR10(dataroot, train=True, download=download_data, transform=transform)
+data_test = torchvision.datasets.CIFAR10(dataroot, train=False, download=download_data, transform=transform)
+
+#data_train = torchvision.datasets.CIFAR100(dataroot, train=True, download=download_data, transform=transform_train)
+#data_val = torchvision.datasets.CIFAR100(dataroot, train=True, download=download_data, transform=transform)
+#data_test = torchvision.datasets.CIFAR100(dataroot, train=False, download=download_data, transform=transform)
+
+#SVHN
+#trainset = torchvision.datasets.SVHN(root=dataroot, split='train', download=download_data, transform=transform_train)
+#extraset = torchvision.datasets.SVHN(root=dataroot, split='extra', download=download_data, transform=transform_train)
+#data_train = ConcatDataset([trainset, extraset])
+#data_test = torchvision.datasets.SVHN(dataroot, split='test', download=download_data, transform=transform)
+
+#ImageNet
+#Necessite SciPy
+# Probleme ? : https://github.com/ildoonet/pytorch-randaugment/blob/48b8f509c4bbda93bbe733d98b3fd052b6e4c8ae/RandAugment/imagenet.py#L28
+#data_train = torchvision.datasets.ImageNet(root=os.path.join(dataroot, 'imagenet-pytorch'), split='train', transform=transform_train)
+#data_test = torchvision.datasets.ImageNet(root=os.path.join(dataroot, 'imagenet-pytorch'), split='val', transform=transform_test)
+
 
 train_subset_indices=range(int(len(data_train)/2))
 val_subset_indices=range(int(len(data_train)/2),len(data_train))
