@@ -13,7 +13,7 @@ TEST_SIZE = BATCH_SIZE
 #TEST_SIZE = 10000 #legerement +Rapide / + Consomation memoire !
 
 #Wether to download data.
-download_data=True
+download_data=False
 #Number of worker to use.
 num_workers=2 #4
 #Pin GPU memory
@@ -46,7 +46,7 @@ transform_train = torchvision.transforms.Compose([
 #data_test = torchvision.datasets.MNIST("../data", train=False, download=True, transform=transform)
 #CIFAR
 data_train = torchvision.datasets.CIFAR10("../data", train=True, download=download_data, transform=transform_train)
-data_val = torchvision.datasets.CIFAR10("../data", train=True, download=download_data, transform=transform)
+#data_val = torchvision.datasets.CIFAR10("../data", train=True, download=download_data, transform=transform)
 data_test = torchvision.datasets.CIFAR10("../data", train=False, download=download_data, transform=transform)
 
 train_subset_indices=range(int(len(data_train)/2))
@@ -55,5 +55,5 @@ val_subset_indices=range(int(len(data_train)/2),len(data_train))
 #val_subset_indices=range(BATCH_SIZE*10, BATCH_SIZE*20)
 
 dl_train = torch.utils.data.DataLoader(data_train, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(train_subset_indices), num_workers=num_workers, pin_memory=pin_memory)
-dl_val = torch.utils.data.DataLoader(data_val, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(val_subset_indices), num_workers=num_workers, pin_memory=pin_memory)
+dl_val = torch.utils.data.DataLoader(data_train, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(val_subset_indices), num_workers=num_workers, pin_memory=pin_memory)
 dl_test = torch.utils.data.DataLoader(data_test, batch_size=TEST_SIZE, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)

@@ -115,15 +115,15 @@ def plot_resV2(log, fig_name='res', param_names=None):
     ax[1, 0].plot(epochs,[x["acc"] for x in log], label='Acc') 
     
     if "f1" in log[0].keys():
-        ax[1, 0].plot(epochs,[x["f1"]*100 for x in log], label='F1')
-        '''
+        #ax[1, 0].plot(epochs,[x["f1"]*100 for x in log], label='F1')
+        #'''
         #print(log[0]["f1"])
-        if len(log[0]["f1"])==1:
-            ax[1, 0].plot(epochs,[x["f1"]*100 for x in log], label='F1')
-        else:
+        if isinstance(log[0]["f1"], list):
             for c in range(len(log[0]["f1"])):
-                ax[1, 0].plot(epochs,[x["f1"][c]*100 for x in log], label='F1-'+str(c))
-        '''
+                ax[1, 0].plot(epochs,[x["f1"][c]*100 for x in log], label='F1-'+str(c), ls='--')
+        else:
+            ax[1, 0].plot(epochs,[x["f1"]*100 for x in log], label='F1', ls='--')
+        #'''
 
     ax[1, 0].legend()
 
