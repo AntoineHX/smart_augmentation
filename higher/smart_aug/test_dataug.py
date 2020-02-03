@@ -74,12 +74,12 @@ if __name__ == "__main__":
 
     #Task to perform
     tasks={
-        #'classic',
-        'aug_model'
+        'classic',
+        #'aug_model'
     }
     #Parameters
     n_inner_iter = 1
-    epochs = 10
+    epochs = 2
     dataug_epoch_start=0
     optim_param={
         'Meta':{
@@ -112,10 +112,16 @@ if __name__ == "__main__":
         #log= train_classic_higher(model=model, epochs=epochs)
 
         exec_time=time.process_time() - t0
+        max_cached = torch.cuda.max_memory_cached()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved()
         ####
         print('-'*9)
         times = [x["time"] for x in log]
-        out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param['Inner'], "Device": device_name, "Log": log}
+        out = {"Accuracy": max([x["acc"] for x in log]), 
+            "Time": (np.mean(times),np.std(times), exec_time), 
+            'Optimizer': optim_param['Inner'], 
+            "Device": device_name, 
+            "Memory": max_cached, 
+            "Log": log}
         print(model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
         filename = "{}-{} epochs".format(model_name,epochs)
         with open("../res/log/%s.json" % filename, "w+") as f:
@@ -156,10 +162,17 @@ if __name__ == "__main__":
              save_sample_freq=None)
 
         exec_time=time.process_time() - t0
+        max_cached = torch.cuda.max_memory_cached()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved()
         ####
         print('-'*9)
         times = [x["time"] for x in log]
-        out = {"Accuracy": max([x["acc"] for x in log]), "Time": (np.mean(times),np.std(times), exec_time), 'Optimizer': optim_param, "Device": device_name, "Param_names": aug_model.TF_names(), "Log": log}
+        out = {"Accuracy": max([x["acc"] for x in log]), 
+            "Time": (np.mean(times),np.std(times), exec_time), 
+            'Optimizer': optim_param, 
+            "Device": device_name, 
+            "Memory": max_cached, 
+            "Param_names": aug_model.TF_names(), 
+            "Log": log}
         print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
         filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)
         with open("../res/log/%s.json" % filename, "w+") as f:
