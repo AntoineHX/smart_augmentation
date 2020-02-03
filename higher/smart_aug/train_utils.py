@@ -150,7 +150,7 @@ def train_classic(model, opt_param, epochs=1, print_freq=1):
     log = []
     for epoch in range(epochs):
         #print_torch_mem("Start epoch")
-        t0 = time.process_time()
+        t0 = time.perf_counter()
         for i, (features, labels) in enumerate(dl_train):
             #viz_sample_data(imgs=features, labels=labels, fig_name='../samples/data_sample_epoch{}_noTF'.format(epoch))
             #print_torch_mem("Start iter")
@@ -164,7 +164,7 @@ def train_classic(model, opt_param, epochs=1, print_freq=1):
             optim.step()
 
         #### Tests ####
-        tf = time.process_time()
+        tf = time.perf_counter()
 
         val_loss = compute_vaLoss(model=model, dl_it=dl_val_it, dl=dl_val)
         accuracy, f1 =test(model)
@@ -176,8 +176,8 @@ def train_classic(model, opt_param, epochs=1, print_freq=1):
             print('Epoch : %d/%d'%(epoch,epochs))
             print('Time : %.00f'%(tf - t0))
             print('Train loss :',loss.item(), '/ val loss', val_loss.item())
-            print('Accuracy :', accuracy)
-            print('F1 :', f1.data)
+            print('Accuracy max:', accuracy)
+            print('F1 :', f1)
 
         #### Log ####
         data={
@@ -219,7 +219,7 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
     """
     device = next(model.parameters()).device
     log = []
-    dl_val_it = iter(dl_val)
+    #dl_val_it = iter(dl_val)
     val_loss=None
 
     high_grad_track = True
@@ -251,8 +251,11 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
     meta_opt.zero_grad()
 
     for epoch in range(1, epochs+1):
-        t0 = time.process_time()
+        t0 = time.perf_counter()
        
+        dl_train, dl_val = next_CVSplit()
+        dl_val_it = iter(dl_val)
+
         for i, (xs, ys) in enumerate(dl_train):
             xs, ys = xs.to(device), ys.to(device)
             
@@ -303,7 +306,7 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
                 #diffopt.detach_()
                 model['model'].detach_()
                 
-        tf = time.process_time()
+        tf = time.perf_counter()
 
         if (save_sample_freq and epoch%save_sample_freq==0): #Data sample saving
                 try:
@@ -345,7 +348,8 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
             print('Epoch : %d/%d'%(epoch,epochs))
             print('Time : %.00f'%(tf - t0))
             print('Train loss :',loss.item(), '/ val loss', val_loss.item())
-            print('Accuracy :', max([x["acc"] for x in log]))
+            print('Accuracy max:', max([x["acc"] for x in log]))
+            print('F1 :', f1)
             print('Data Augmention : {} (Epoch {})'.format(model._data_augmentation, dataug_epoch_start))
             if not model['data_aug']._fixed_prob: print('TF Proba :', model['data_aug']['prob'].data)
             #print('proba grad',model['data_aug']['prob'].grad)
