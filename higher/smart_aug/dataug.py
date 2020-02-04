@@ -19,6 +19,12 @@ import copy
 
 import transformations as TF
 
+import higher
+import higher_patch
+
+from utils import clip_norm 
+from train_utils import compute_vaLoss
+
 ### Data augmenter ###
 class Data_augV5(nn.Module): #Optimisation jointe (mag, proba)
     """Data augmentation module with learnable parameters.
@@ -798,7 +804,6 @@ class RandAug(nn.Module): #RandAugment = UniformFx-MagFxSh + rapide
         return "RandAug(%dTFx%d-Mag%d)" % (self._nb_tf, self._N_seqTF, self.mag)
 
 ### Models ###
-import higher
 class Higher_model(nn.Module):
     """Model wrapper for higher gradient tracking.
 
@@ -897,8 +902,6 @@ class Higher_model(nn.Module):
         """
         return self._name
 
-from utils import clip_norm 
-from train_utils import compute_vaLoss
 class Augmented_model(nn.Module):
     """Wrapper for a Data Augmentation module and a model.
 

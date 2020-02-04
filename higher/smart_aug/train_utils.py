@@ -6,6 +6,7 @@ import torch
 #import torch.optim
 import torchvision
 import higher
+import higher_patch
 
 from datasets import *
 from utils import *
@@ -219,7 +220,7 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
     """
     device = next(model.parameters()).device
     log = []
-    #dl_val_it = iter(dl_val)
+    dl_val_it = iter(dl_val)
     val_loss=None
 
     high_grad_track = True
@@ -253,8 +254,8 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
     for epoch in range(1, epochs+1):
         t0 = time.perf_counter()
        
-        dl_train, dl_val = cvs.next_split()
-        dl_val_it = iter(dl_val)
+        #dl_train, dl_val = cvs.next_split()
+        #dl_val_it = iter(dl_val)
 
         for i, (xs, ys) in enumerate(dl_train):
             xs, ys = xs.to(device), ys.to(device)
