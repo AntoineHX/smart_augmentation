@@ -1,6 +1,6 @@
 """ Dataset definition.
 
-    MNIST / CIFAR10
+    MNIST / CIFAR10 / CIFAR100 / SVHN / ImageNet
 """
 import torch
 from torch.utils.data.dataset import ConcatDataset
@@ -37,9 +37,16 @@ transform_train = torchvision.transforms.Compose([
     #transforms.RandomVerticalFlip(),
     torchvision.transforms.ToTensor(),
 ])
-#from RandAugment import RandAugment
+
+## RandAugment ##
+from RandAugment import RandAugment
 # Add RandAugment with N, M(hyperparameter)
-#transform_train.transforms.insert(0, RandAugment(n=2, m=30))
+rand_aug={'N': 2, 'M': 1}
+#rand_aug={'N': 2, 'M': 9./30} #RN-ImageNet
+#rand_aug={'N': 3, 'M': 5./30} #WRN-CIFAR10
+#rand_aug={'N': 2, 'M': 14./30} #WRN-CIFAR100
+#rand_aug={'N': 3, 'M': 7./30} #WRN-SVHN
+transform_train.transforms.insert(0, RandAugment(n=rand_aug['N'], m=rand_aug['M']))
 
 ### Classic Dataset ###
 
@@ -50,7 +57,7 @@ transform_train = torchvision.transforms.Compose([
 
 #CIFAR
 data_train = torchvision.datasets.CIFAR10(dataroot, train=True, download=download_data, transform=transform_train)
-#data_val = torchvision.datasets.CIFAR10(dataroot, train=True, download=download_data, transform=transform)
+data_val = torchvision.datasets.CIFAR10(dataroot, train=True, download=download_data, transform=transform)
 data_test = torchvision.datasets.CIFAR10(dataroot, train=False, download=download_data, transform=transform)
 
 #data_train = torchvision.datasets.CIFAR100(dataroot, train=True, download=download_data, transform=transform_train)
@@ -72,31 +79,17 @@ data_test = torchvision.datasets.CIFAR10(dataroot, train=False, download=downloa
 
 #Validation set size [0, 1]
 valid_size=0.1
-#train_subset_indices=range(int(len(data_train)*(1-valid_size)))
-#val_subset_indices=range(int(len(data_train)*(1-valid_size)),len(data_train))
+train_subset_indices=range(int(len(data_train)*(1-valid_size)))
+val_subset_indices=range(int(len(data_train)*(1-valid_size)),len(data_train))
 #train_subset_indices=range(BATCH_SIZE*10)
 #val_subset_indices=range(BATCH_SIZE*10, BATCH_SIZE*20)
 
-#from torch.utils.data import SubsetRandomSampler
-#dl_train = torch.utils.data.DataLoader(data_train, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(train_subset_indices), num_workers=num_workers, pin_memory=pin_memory)
-#dl_val = torch.utils.data.DataLoader(data_train, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(val_subset_indices), num_workers=num_workers, pin_memory=pin_memory)
+from torch.utils.data import SubsetRandomSampler
+dl_train = torch.utils.data.DataLoader(data_train, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(train_subset_indices), num_workers=num_workers, pin_memory=pin_memory)
+dl_val = torch.utils.data.DataLoader(data_val, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(val_subset_indices), num_workers=num_workers, pin_memory=pin_memory)
 dl_test = torch.utils.data.DataLoader(data_test, batch_size=TEST_SIZE, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
 
 #Cross Validation
-'''
-from skorch.dataset import CVSplit
-import numpy as np
-cvs = CVSplit(cv=valid_size, stratified=True) #Stratified =True for unbalanced dataset #ShuffleSplit
-
-def next_CVSplit():
-
-    train_subset, val_subset = cvs(data_train, y=np.array(data_train.targets))
-    dl_train = torch.utils.data.DataLoader(train_subset, batch_size=BATCH_SIZE, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
-    dl_val = torch.utils.data.DataLoader(val_subset, batch_size=BATCH_SIZE, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
-
-    return dl_train, dl_val
-
-dl_train, dl_val = next_CVSplit()
 '''
 import numpy as np
 from sklearn.model_selection import ShuffleSplit
@@ -134,7 +127,7 @@ class CVSplit(object):
         else:
             cv_cls = ShuffleSplit
 
-        self._cv= cv_cls(test_size=val_size, random_state=0)
+        self._cv= cv_cls(test_size=val_size, random_state=0) #Random state w/ fixed seed
 
     def next_split(self):
         """ Get next cross-validation split.
@@ -158,3 +151,20 @@ class CVSplit(object):
 
 cvs = CVSplit(data_train, val_size=valid_size)
 dl_train, dl_val = cvs.next_split()
+'''
+
+'''
+from skorch.dataset import CVSplit
+import numpy as np
+cvs = CVSplit(cv=valid_size, stratified=True) #Stratified =True for unbalanced dataset #ShuffleSplit
+
+def next_CVSplit():
+
+    train_subset, val_subset = cvs(data_train, y=np.array(data_train.targets))
+    dl_train = torch.utils.data.DataLoader(train_subset, batch_size=BATCH_SIZE, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
+    dl_val = torch.utils.data.DataLoader(val_subset, batch_size=BATCH_SIZE, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
+
+    return dl_train, dl_val
+
+dl_train, dl_val = next_CVSplit()
+'''
