@@ -19,13 +19,16 @@ tf_names = [
     'ShearX',
     'ShearY',
 
+    #'TranslateXabs',
+    #'TranslateYabs',
+
     ## Color TF (Expect image in the range of [0, 1]) ##
     'Contrast',
     'Color',
     'Brightness',
     'Sharpness',
     'Posterize',
-    'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
+    'Solarize',
 
     #Color TF (Common mag scale)
     #'+Contrast',
@@ -79,7 +82,7 @@ if __name__ == "__main__":
     }
     #Parameters
     n_inner_iter = 1
-    epochs = 2
+    epochs = 150
     dataug_epoch_start=0
     optim_param={
         'Meta':{
@@ -94,12 +97,12 @@ if __name__ == "__main__":
     }
 
     #Models
-    #model = LeNet(3,10)
+    model = LeNet(3,10)
     #model = ResNet(num_classes=10)
-    import torchvision.models as models
+    #import torchvision.models as models
     #model=models.resnet18()
-    model_name = 'resnet18' #'wide_resnet50_2' #'resnet18' #str(model)
-    model = getattr(models.resnet, model_name)(pretrained=False)
+    model_name = str(model) #'wide_resnet50_2' #'resnet18' #str(model)
+    #model = getattr(models.resnet, model_name)(pretrained=False)
 
     #### Classic ####
     if 'classic' in tasks:
@@ -143,11 +146,12 @@ if __name__ == "__main__":
 
     #### Augmented Model ####
     if 'aug_model' in tasks:
+        torch.cuda.reset_max_memory_cached() #reset_peak_stats
         t0 = time.perf_counter()
 
         tf_dict = {k: TF.TF_dict[k] for k in tf_names}
         model = Higher_model(model, model_name) #run_dist_dataugV3
-        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=3, mix_dist=0.8, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
+        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=1, mix_dist=0.5, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
         #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 
         print("{} on {} for {} epochs - {} inner_it".format(str(aug_model), device_name, epochs, n_inner_iter))
@@ -159,10 +163,10 @@ if __name__ == "__main__":
              print_freq=1, 
              unsup_loss=1, 
              hp_opt=False,
-             save_sample_freq=None)
+             save_sample_freq=1)
 
         exec_time=time.perf_counter() - t0
-        max_cached = torch.cuda.max_memory_cached()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved()
+        max_cached = torch.cuda.max_memory_cached()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved() #MB
         ####
         print('-'*9)
         times = [x["time"] for x in log]
@@ -174,7 +178,7 @@ if __name__ == "__main__":
             "Param_names": aug_model.TF_names(), 
             "Log": log}
         print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-        filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)+"(CV)"
+        filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)+"(CV0.1)"
         with open("../res/log/%s.json" % filename, "w+") as f:
             try:
                 json.dump(out, f, indent=True)
