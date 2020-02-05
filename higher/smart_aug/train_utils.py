@@ -254,6 +254,7 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
     for epoch in range(1, epochs+1):
         t0 = time.perf_counter()
        
+        #Cross-Validation
         #dl_train, dl_val = cvs.next_split()
         #dl_val_it = iter(dl_val)
 
