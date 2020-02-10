@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     #### Augmented Model ####
     if 'aug_model' in tasks:
-        torch.cuda.reset_max_memory_cached() #reset_peak_stats
+        torch.cuda.reset_max_memory_allocated() #reset_peak_stats
         t0 = time.perf_counter()
 
         tf_dict = {k: TF.TF_dict[k] for k in tf_names}
@@ -166,7 +166,7 @@ if __name__ == "__main__":
              save_sample_freq=1)
 
         exec_time=time.perf_counter() - t0
-        max_cached = torch.cuda.max_memory_cached()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved() #MB
+        max_cached = torch.cuda.max_memory_allocated()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved() #MB
         ####
         print('-'*9)
         times = [x["time"] for x in log]
@@ -178,7 +178,7 @@ if __name__ == "__main__":
             "Param_names": aug_model.TF_names(), 
             "Log": log}
         print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-        filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)+"(CV0.1)"
+        filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)
         with open("../res/log/%s.json" % filename, "w+") as f:
             try:
                 json.dump(out, f, indent=True)

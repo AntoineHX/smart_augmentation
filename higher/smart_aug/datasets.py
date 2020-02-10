@@ -39,14 +39,14 @@ transform_train = torchvision.transforms.Compose([
 ])
 
 ## RandAugment ##
-from RandAugment import RandAugment
+#from RandAugment import RandAugment
 # Add RandAugment with N, M(hyperparameter)
-rand_aug={'N': 2, 'M': 1}
+#rand_aug={'N': 2, 'M': 1}
 #rand_aug={'N': 2, 'M': 9./30} #RN-ImageNet
 #rand_aug={'N': 3, 'M': 5./30} #WRN-CIFAR10
 #rand_aug={'N': 2, 'M': 14./30} #WRN-CIFAR100
 #rand_aug={'N': 3, 'M': 7./30} #WRN-SVHN
-transform_train.transforms.insert(0, RandAugment(n=rand_aug['N'], m=rand_aug['M']))
+#transform_train.transforms.insert(0, RandAugment(n=rand_aug['N'], m=rand_aug['M']))
 
 ### Classic Dataset ###
 
