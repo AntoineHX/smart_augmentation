@@ -972,7 +972,11 @@ class Augmented_model(nn.Module):
 
         self._opt_param=opt_param
         #Inner Opt
-        inner_opt = torch.optim.SGD(self._mods['model']['original'].parameters(), lr=opt_param['Inner']['lr'], momentum=opt_param['Inner']['momentum']) #lr=1e-2 / momentum=0.9
+        inner_opt = torch.optim.SGD(self._mods['model']['original'].parameters(), 
+            lr=opt_param['Inner']['lr'], 
+            momentum=opt_param['Inner']['momentum'], 
+            weight_decay=opt_param['Inner']['decay'], 
+            nesterov=opt_param['Inner']['nesterov']) #lr=1e-2 / momentum=0.9
 
         #Validation data
         self._dl_val=dl_val
