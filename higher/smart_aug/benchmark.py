@@ -97,6 +97,7 @@ if __name__ == "__main__":
                             for m_setup in mag_setup:
 
                                 torch.cuda.reset_max_memory_allocated() #reset_peak_stats
+                                torch.cuda.reset_max_memory_cached() #reset_peak_stats
                                 t0 = time.perf_counter()
 
                                 model = getattr(model_type, model_name)(pretrained=False)
@@ -126,7 +127,8 @@ if __name__ == "__main__":
                                      save_sample_freq=None)
 
                                 exec_time=time.perf_counter() - t0
-                                max_cached = torch.cuda.max_memory_allocated()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved() #MB
+                                max_allocated = torch.cuda.max_memory_allocated()/(1024.0 * 1024.0)
+                                max_cached = torch.cuda.max_memory_cached()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved() #MB
                                 ####
                                 print('-'*9)
                                 times = [x["time"] for x in log]
@@ -134,7 +136,7 @@ if __name__ == "__main__":
                                     "Time": (np.mean(times),np.std(times), exec_time), 
                                     'Optimizer': optim_param, 
                                     "Device": device_name, 
-                                    "Memory": max_cached, 
+                                    "Memory": [max_allocated, max_cached], 
                                     "Param_names": aug_model.TF_names(), 
                                     "Log": log}
                                 print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
@@ -155,6 +157,7 @@ if __name__ == "__main__":
             for model_name in model_list[model_type]:
                 for run in range(nb_run):
                     torch.cuda.reset_max_memory_allocated() #reset_peak_stats
+                    torch.cuda.reset_max_memory_cached() #reset_peak_stats
                     t0 = time.perf_counter()
 
                     model = getattr(model_type, model_name)(pretrained=False).to(device)
@@ -164,7 +167,8 @@ if __name__ == "__main__":
                     log= train_classic(model=model, opt_param=optim_param, epochs=epochs, print_freq=epochs/4)
 
                     exec_time=time.perf_counter() - t0
-                    max_cached = torch.cuda.max_memory_allocated()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved() #MB
+                    max_allocated = torch.cuda.max_memory_allocated()/(1024.0 * 1024.0)
+                    max_cached = torch.cuda.max_memory_cached()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved() #MB
                     ####
                     print('-'*9)
                     times = [x["time"] for x in log]
@@ -172,7 +176,7 @@ if __name__ == "__main__":
                         "Time": (np.mean(times),np.std(times), exec_time), 
                         'Optimizer': optim_param, 
                         "Device": device_name, 
-                        "Memory": max_cached,
+                        "Memory": [max_allocated, max_cached],
                         #"Rand_Aug": rand_aug, 
                         "Log": log}
                     print(model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
