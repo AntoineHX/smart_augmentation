@@ -7,7 +7,7 @@ from torch.utils.data.dataset import ConcatDataset
 import torchvision
 
 #Train/Validation batch size.
-BATCH_SIZE = 300
+BATCH_SIZE = 512
 #Test batch size.
 TEST_SIZE = BATCH_SIZE 
 #TEST_SIZE = 10000 #legerement +Rapide / + Consomation memoire !

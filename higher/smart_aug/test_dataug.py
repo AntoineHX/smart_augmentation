@@ -82,7 +82,7 @@ if __name__ == "__main__":
     }
     #Parameters
     n_inner_iter = 1
-    epochs = 150
+    epochs = 200
     dataug_epoch_start=0
     optim_param={
         'Meta':{
@@ -91,10 +91,11 @@ if __name__ == "__main__":
         },
         'Inner':{
             'optim': 'SGD',
-            'lr':1e-2, #1e-2
+            'lr':1e-1, #1e-2/1e-1
             'momentum':0.9, #0.9
-            'decay':0.0001,
+            'decay':0.0005, #0.0005
             'nesterov':True,
+            'scheduler':'exponential', #None, 'cosine', 'multiStep', 'exponential'
         }
     }
 
@@ -103,21 +104,26 @@ if __name__ == "__main__":
     #model = ResNet(num_classes=10)
     import torchvision.models as models
     #model=models.resnet18()
-    model_name = 'resnet50' #'wide_resnet50_2' #'resnet18' #str(model)
-    model = getattr(models.resnet, model_name)(pretrained=False)
+    model_name = 'resnet18' #'wide_resnet50_2' #'resnet18' #str(model)
+    model = getattr(models.resnet, model_name)(pretrained=False, num_classes=len(dl_train.dataset.classes))
 
     #### Classic ####
     if 'classic' in tasks:
+        torch.cuda.reset_max_memory_allocated() #reset_peak_stats
+        torch.cuda.reset_max_memory_cached() #reset_peak_stats
         t0 = time.perf_counter()
+
         model = model.to(device)
 
 
         print("{} on {} for {} epochs".format(model_name, device_name, epochs))
+        #print("RandAugment(N{}-M{:.2f})-{} on {} for {} epochs".format(rand_aug['N'],rand_aug['M'],model_name, device_name, epochs))
         log= train_classic(model=model, opt_param=optim_param, epochs=epochs, print_freq=10)
         #log= train_classic_higher(model=model, epochs=epochs)
 
         exec_time=time.perf_counter() - t0
-        max_cached = torch.cuda.max_memory_cached()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved()
+        max_allocated = torch.cuda.max_memory_allocated()/(1024.0 * 1024.0)
+        max_cached = torch.cuda.max_memory_cached()/(1024.0 * 1024.0) #torch.cuda.max_memory_reserved() #MB
         ####
         print('-'*9)
         times = [x["time"] for x in log]
@@ -125,10 +131,13 @@ if __name__ == "__main__":
             "Time": (np.mean(times),np.std(times), exec_time), 
             'Optimizer': optim_param['Inner'], 
             "Device": device_name, 
-            "Memory": max_cached, 
+            "Memory": [max_allocated, max_cached], 
+            #"Rand_Aug": rand_aug, 
             "Log": log}
         print(model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
         filename = "{}-{} epochs".format(model_name,epochs)
+        #print("RandAugment-",model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
+        #filename = "RandAugment(N{}-M{:.2f})-{}-{} epochs".format(rand_aug['N'],rand_aug['M'],model_name,epochs)
         with open("../res/log/%s.json" % filename, "w+") as f:
             try:
                 json.dump(out, f, indent=True)
@@ -163,7 +172,7 @@ if __name__ == "__main__":
              inner_it=n_inner_iter, 
              dataug_epoch_start=dataug_epoch_start, 
              opt_param=optim_param,
-             print_freq=10, 
+             print_freq=1, 
              unsup_loss=1, 
              hp_opt=False,
              save_sample_freq=None)

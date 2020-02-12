@@ -958,6 +958,8 @@ class Augmented_model(nn.Module):
 
                 model.step(loss)
                 
+            Does not support LR scheduler.
+            
             See ''run_simple_smartaug'' for a complete example.
 
             Args:
