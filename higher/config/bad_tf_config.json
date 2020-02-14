@@ -1,0 +1,193 @@
+[
+ {
+ "name": "Identity",
+ "function": "identity"
+ },
+ {
+ "name": "FlipUD",
+ "function": "flip",
+ "param": {
+   "axis": "Y"
+  }
+ },
+ {
+ "name": "FlipLR",
+ "function": "flip",
+ "param": {
+   "axis": "X"
+  }
+ },
+ {
+ "name": "Rotate",
+ "function": "rotate",
+ "param": {
+   "min": null,
+   "max": 30,
+   "invScale": false
+  }
+ },
+ {
+ "name": "TranslateX",
+ "function": "translate",
+ "param": {
+   "axis": "X",
+   "min": null,
+   "max": 0.33,
+   "absolute": false,
+   "invScale": false
+  }
+ },
+ {
+ "name": "TranslateY",
+ "function": "translate",
+ "param": {
+   "axis": "Y",
+   "min": null,
+   "max": 0.33,
+   "absolute": false,
+   "invScale": false
+  }
+ },
+ {
+ "name": "ShearX",
+ "function": "shear",
+ "param": {
+   "axis": "X",
+   "min": null,
+   "max": 0.3,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "ShearY",
+ "function": "shear",
+ "param": {
+   "axis": "Y",
+   "min": null,
+   "max": 0.3,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "Contrast",
+ "function": "contrast",
+ "param": {
+   "min": 0.1,
+   "max": 1.9,
+   "invScale": false
+  }
+ },
+ {
+ "name": "Color",
+ "function": "color",
+ "param": {
+   "min": 0.1,
+   "max": 1.9,
+   "invScale": false
+  }
+ },
+ {
+ "name": "Brightness",
+ "function": "brightness",
+ "param": {
+   "min": 0.1,
+   "max": 1.9,
+   "invScale": false
+  }
+ },
+ {
+ "name": "Sharpness",
+ "function": "sharpness",
+ "param": {
+   "min": 0.1,
+   "max": 1.9,
+   "invScale": false
+  }
+ },
+ {
+ "name": "Posterize",
+ "function": "posterize",
+ "param": {
+   "min": 4.0,
+   "max": 8.0,
+   "invScale": false
+  }
+ },
+ {
+ "name": "Solarize",
+ "function": "solarize",
+ "param": {
+   "min": 0.00390625,
+   "max": 1.0,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BTranslateX",
+ "function": "translate",
+ "param": {
+   "axis": "X",
+   "min": 25,
+   "max": 30,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BTranslateX-",
+ "function": "translate",
+ "param": {
+   "axis": "X",
+   "min": -25,
+   "max": -30,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BTranslateY",
+ "function": "translate",
+ "param": {
+   "axis": "Y",
+   "min": 25,
+   "max": 30,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BTranslateY-",
+ "function": "translate",
+ "param": {
+   "axis": "Y",
+   "min": -25,
+   "max": -30,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BShearX",
+ "function": "shear",
+ "param": {
+   "axis": "X",
+   "min": 0.9,
+   "max": 1.2,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BShearY",
+ "function": "shear",
+ "param": {
+   "axis": "Y",
+   "min": 0.9,
+   "max": 1.2,
+   "absolute": true,
+   "invScale": false
+  }
+ }
+]

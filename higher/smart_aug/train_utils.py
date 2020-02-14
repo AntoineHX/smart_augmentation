@@ -272,15 +272,15 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
     #Scheduler
     inner_scheduler=None
     if opt_param['Inner']['scheduler']=='cosine':
-        inner_scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=epochs, eta_min=0.)
+        inner_scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(inner_opt, T_max=epochs, eta_min=0.)
     elif opt_param['Inner']['scheduler']=='multiStep':
         #Multistep milestones inspired by AutoAugment
-        inner_scheduler=torch.optim.lr_scheduler.MultiStepLR(optim, 
+        inner_scheduler=torch.optim.lr_scheduler.MultiStepLR(inner_opt, 
             milestones=[int(epochs/3), int(epochs*2/3), int(epochs*2.7/3)], 
             gamma=0.1)
     elif opt_param['Inner']['scheduler']=='exponential':
         #inner_scheduler=torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.1) #Wrong gamma
-        inner_scheduler=torch.optim.lr_scheduler.LambdaLR(optim, lambda epoch: (1 - epoch / epochs) ** 0.9)
+        inner_scheduler=torch.optim.lr_scheduler.LambdaLR(inner_opt, lambda epoch: (1 - epoch / epochs) ** 0.9)
     elif opt_param['Inner']['scheduler'] is not None:
         raise ValueError("Lr scheduler unknown : %s"%opt_param['Inner']['scheduler'])
 

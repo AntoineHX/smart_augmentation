@@ -8,6 +8,7 @@ from dataug import *
 from train_utils import *
 
 # Use available TF (see transformations.py)
+'''
 tf_names = [
     ## Geometric TF ##
     'Identity',
@@ -57,7 +58,8 @@ tf_names = [
     #'Random',
     #'RandBlend'
 ]
-
+'''
+TF_loader=TF_loader()
 
 device = torch.device('cuda') #Select device to use
 
@@ -77,12 +79,12 @@ if __name__ == "__main__":
 
     #Task to perform
     tasks={
-        'classic',
-        #'aug_model'
+        #'classic',
+        'aug_model'
     }
     #Parameters
     n_inner_iter = 1
-    epochs = 200
+    epochs = 20
     dataug_epoch_start=0
     optim_param={
         'Meta':{
@@ -91,11 +93,11 @@ if __name__ == "__main__":
         },
         'Inner':{
             'optim': 'SGD',
-            'lr':1e-1, #1e-2/1e-1
+            'lr':1e-1, #1e-2/1e-1 (ResNet)
             'momentum':0.9, #0.9
             'decay':0.0005, #0.0005
             'nesterov':True,
-            'scheduler':'exponential', #None, 'cosine', 'multiStep', 'exponential'
+            'scheduler':'cosine', #None, 'cosine', 'multiStep', 'exponential'
         }
     }
 
@@ -137,7 +139,7 @@ if __name__ == "__main__":
         print(model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
         filename = "{}-{} epochs".format(model_name,epochs)
         #print("RandAugment-",model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-        #filename = "RandAugment(N{}-M{:.2f})-{}-{} epochs".format(rand_aug['N'],rand_aug['M'],model_name,epochs)
+        #filename = "RandAugment(N{}-M{:.2f})-{}-{} epochs".format(rand_aug['N'],rand_aug['M'],model_name,epochs)+'-cosine'
         with open("../res/log/%s.json" % filename, "w+") as f:
             try:
                 json.dump(out, f, indent=True)
@@ -157,13 +159,23 @@ if __name__ == "__main__":
 
     #### Augmented Model ####
     if 'aug_model' in tasks:
+        tf_config='../config/base_tf_config.json'
+        tf_dict, tf_ignore_mag =TF_loader.load_TF_dict(tf_config)
+        #tf_dict = {k: TF_dict[k] for k in tf_names}
+
         torch.cuda.reset_max_memory_allocated() #reset_peak_stats
         torch.cuda.reset_max_memory_cached() #reset_peak_stats
         t0 = time.perf_counter()
 
-        tf_dict = {k: TF.TF_dict[k] for k in tf_names}
         model = Higher_model(model, model_name) #run_dist_dataugV3
-        aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=1, mix_dist=0.5, fixed_prob=False, fixed_mag=False, shared_mag=False), model).to(device)
+        aug_model = Augmented_model(
+            Data_augV5(TF_dict=tf_dict, 
+                N_TF=3, 
+                mix_dist=0.5, 
+                fixed_prob=False, 
+                fixed_mag=False, 
+                shared_mag=False, 
+                TF_ignore_mag=tf_ignore_mag), model).to(device)
         #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 
         print("{} on {} for {} epochs - {} inner_it".format(str(aug_model), device_name, epochs, n_inner_iter))
@@ -175,7 +187,7 @@ if __name__ == "__main__":
              print_freq=1, 
              unsup_loss=1, 
              hp_opt=False,
-             save_sample_freq=None)
+             save_sample_freq=0)
 
         exec_time=time.perf_counter() - t0
         max_allocated = torch.cuda.max_memory_allocated()/(1024.0 * 1024.0)
@@ -188,6 +200,7 @@ if __name__ == "__main__":
             'Optimizer': optim_param, 
             "Device": device_name, 
             "Memory": [max_allocated, max_cached], 
+            "TF_config": tf_config,
             "Param_names": aug_model.TF_names(), 
             "Log": log}
         print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])

@@ -16,8 +16,11 @@ optim_param={
     },
     'Inner':{
         'optim': 'SGD',
-        'lr':1e-2, #1e-2 #1e-1 for ResNet
+        'lr':1e-1, #1e-2/1e-1 (ResNet)
         'momentum':0.9, #0.9
+        'decay':0.0005, #0.0005
+        'nesterov':True,
+        'scheduler':'cosine', #None, 'cosine', 'multiStep', 'exponential'
     }
 }
 
@@ -28,6 +31,7 @@ dataug_epoch_start=0
 nb_run= 3
 
 # Use available TF (see transformations.py)
+'''
 tf_names = [
     ## Geometric TF ##
     'Identity',
@@ -63,7 +67,10 @@ tf_names = [
     #'RandBlend'
 ]
 tf_dict = {k: TF.TF_dict[k] for k in tf_names}
-
+'''
+tf_config='../config/base_tf_config.json'
+TF_loader=TF_loader()
+tf_dict, tf_ignore_mag =TF_loader.load_TF_dict(tf_config)
 
 device = torch.device('cuda')
 
@@ -82,11 +89,11 @@ np.random.seed(0)
 if __name__ == "__main__":
 
     ### Benchmark ###
-    '''
+    #'''
     n_inner_iter = 1
     dist_mix = [0.5]#[0.5, 1.0]
     N_seq_TF= [3, 4]
-    mag_setup = [(True, True), (False, False)] #(FxSh, Independant)
+    mag_setup = [(False, False)] #[(True, True), (False, False)] #(FxSh, Independant)
 
     for model_type in model_list.keys():
             for model_name in model_list[model_type]:
@@ -100,7 +107,7 @@ if __name__ == "__main__":
                                 torch.cuda.reset_max_memory_cached() #reset_peak_stats
                                 t0 = time.perf_counter()
 
-                                model = getattr(model_type, model_name)(pretrained=False)
+                                model = getattr(model_type, model_name)(pretrained=False, num_classes=len(dl_train.dataset.classes))
 
                                 model = Higher_model(model, model_name) #run_dist_dataugV3
                                 if n_inner_iter!=0:
@@ -137,6 +144,7 @@ if __name__ == "__main__":
                                     'Optimizer': optim_param, 
                                     "Device": device_name, 
                                     "Memory": [max_allocated, max_cached], 
+                                    "TF_config": tf_config,
                                     "Param_names": aug_model.TF_names(), 
                                     "Log": log}
                                 print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
@@ -150,9 +158,9 @@ if __name__ == "__main__":
 
                                 print('Execution Time : %.00f '%(exec_time))
                                 print('-'*9)
-    '''
-    ### Benchmark - RandAugment/Vanilla ###
     #'''
+    ### Benchmark - RandAugment/Vanilla ###
+    '''
     for model_type in model_list.keys():
             for model_name in model_list[model_type]:
                 for run in range(nb_run):
@@ -160,7 +168,7 @@ if __name__ == "__main__":
                     torch.cuda.reset_max_memory_cached() #reset_peak_stats
                     t0 = time.perf_counter()
 
-                    model = getattr(model_type, model_name)(pretrained=False).to(device)
+                    model = getattr(model_type, model_name)(pretrained=False, num_classes=len(dl_train.dataset.classes)).to(device)
 
                     print("{} on {} for {} epochs".format(model_name, device_name, epochs))
                     #print("RandAugment(N{}-M{:.2f})-{} on {} for {} epochs".format(rand_aug['N'],rand_aug['M'],model_name, device_name, epochs))
@@ -180,7 +188,7 @@ if __name__ == "__main__":
                         #"Rand_Aug": rand_aug, 
                         "Log": log}
                     print(model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-                    filename = "{} epochs -{}".format(model_name,epochs, run)
+                    filename = "{}-{} epochs -{}".format(model_name,epochs, run)
                     #print("RandAugment-",model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
                     #filename = "RandAugment(N{}-M{:.2f})-{}-{} epochs -{}".format(rand_aug['N'],rand_aug['M'],model_name,epochs, run)
                     with open(res_folder+"log/%s.json" % filename, "w+") as f:
@@ -189,12 +197,13 @@ if __name__ == "__main__":
                             print('Log :\"',f.name, '\" saved !')
                         except:
                             print("Failed to save logs :",f.name)
+                            print(sys.exc_info()[1])
 
                     #plot_resV2(log, fig_name=res_folder+filename)
 
                     print('Execution Time : %.00f '%(exec_time))
                     print('-'*9)
-    #'''
+    '''
     ### HP Search ###
     '''
     from LeNet import *
@@ -221,7 +230,7 @@ if __name__ == "__main__":
 
                             t0 = time.perf_counter()
 
-                            model = getattr(models.resnet, 'resnet18')(pretrained=False)
+                            model = getattr(models.resnet, 'resnet18')(pretrained=False, num_classes=len(dl_train.dataset.classes))
                             #model = LeNet(3,10)
                             model = Higher_model(model) #run_dist_dataugV3
                             aug_model = Augmented_model(Data_augV5(TF_dict=tf_dict, N_TF=n_tf, mix_dist=dist, fixed_prob=p_setup, fixed_mag=m_setup[0], shared_mag=m_setup[1]), model).to(device)
