@@ -7,58 +7,7 @@ from dataug import *
 #from utils import *
 from train_utils import *
 
-# Use available TF (see transformations.py)
-'''
-tf_names = [
-    ## Geometric TF ##
-    'Identity',
-    'FlipUD',
-    'FlipLR',
-    'Rotate',
-    'TranslateX',
-    'TranslateY',
-    'ShearX',
-    'ShearY',
-
-    #'TranslateXabs',
-    #'TranslateYabs',
-
-    ## Color TF (Expect image in the range of [0, 1]) ##
-    'Contrast',
-    'Color',
-    'Brightness',
-    'Sharpness',
-    'Posterize',
-    'Solarize',
-
-    #Color TF (Common mag scale)
-    #'+Contrast',
-    #'+Color',
-    #'+Brightness',
-    #'+Sharpness',
-    #'-Contrast',
-    #'-Color',
-    #'-Brightness',
-    #'-Sharpness',
-    #'=Posterize',
-    #'=Solarize',
-
-    ## Bad Tranformations ##
-    # Bad Geometric TF #
-    #'BShearX',
-    #'BShearY',
-    #'BTranslateX-', 
-    #'BTranslateX-',
-    #'BTranslateY',
-    #'BTranslateY-',
-
-    #'BadContrast',
-    #'BadBrightness', 
-
-    #'Random',
-    #'RandBlend'
-]
-'''
+postfix=''
 TF_loader=TF_loader()
 
 device = torch.device('cuda') #Select device to use
@@ -84,7 +33,7 @@ if __name__ == "__main__":
     }
     #Parameters
     n_inner_iter = 1
-    epochs = 20
+    epochs = 2
     dataug_epoch_start=0
     optim_param={
         'Meta':{
@@ -96,7 +45,7 @@ if __name__ == "__main__":
             'lr':1e-1, #1e-2/1e-1 (ResNet)
             'momentum':0.9, #0.9
             'decay':0.0005, #0.0005
-            'nesterov':True,
+            'nesterov':False, #False (True: Bad behavior w/ Data_aug)
             'scheduler':'cosine', #None, 'cosine', 'multiStep', 'exponential'
         }
     }
@@ -161,7 +110,6 @@ if __name__ == "__main__":
     if 'aug_model' in tasks:
         tf_config='../config/base_tf_config.json'
         tf_dict, tf_ignore_mag =TF_loader.load_TF_dict(tf_config)
-        #tf_dict = {k: TF_dict[k] for k in tf_names}
 
         torch.cuda.reset_max_memory_allocated() #reset_peak_stats
         torch.cuda.reset_max_memory_cached() #reset_peak_stats
@@ -170,7 +118,7 @@ if __name__ == "__main__":
         model = Higher_model(model, model_name) #run_dist_dataugV3
         aug_model = Augmented_model(
             Data_augV5(TF_dict=tf_dict, 
-                N_TF=3, 
+                N_TF=1, 
                 mix_dist=0.5, 
                 fixed_prob=False, 
                 fixed_mag=False, 
@@ -184,10 +132,10 @@ if __name__ == "__main__":
              inner_it=n_inner_iter, 
              dataug_epoch_start=dataug_epoch_start, 
              opt_param=optim_param,
-             print_freq=1, 
+             print_freq=20, 
              unsup_loss=1, 
              hp_opt=False,
-             save_sample_freq=0)
+             save_sample_freq=None)
 
         exec_time=time.perf_counter() - t0
         max_allocated = torch.cuda.max_memory_allocated()/(1024.0 * 1024.0)
@@ -204,7 +152,7 @@ if __name__ == "__main__":
             "Param_names": aug_model.TF_names(), 
             "Log": log}
         print(str(aug_model),": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-        filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)
+        filename = "{}-{} epochs (dataug:{})- {} in_it".format(str(aug_model),epochs,dataug_epoch_start,n_inner_iter)+postfix
         with open("../res/log/%s.json" % filename, "w+") as f:
             try:
                 json.dump(out, f, indent=True)

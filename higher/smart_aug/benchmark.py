@@ -19,7 +19,7 @@ optim_param={
         'lr':1e-1, #1e-2/1e-1 (ResNet)
         'momentum':0.9, #0.9
         'decay':0.0005, #0.0005
-        'nesterov':True,
+        'nesterov':False, #False (True: Bad behavior w/ Data_aug)
         'scheduler':'cosine', #None, 'cosine', 'multiStep', 'exponential'
     }
 }
@@ -30,44 +30,6 @@ epochs= 200
 dataug_epoch_start=0
 nb_run= 3
 
-# Use available TF (see transformations.py)
-'''
-tf_names = [
-    ## Geometric TF ##
-    'Identity',
-    'FlipUD',
-    'FlipLR',
-    'Rotate',
-    'TranslateX',
-    'TranslateY',
-    'ShearX',
-    'ShearY',
-
-    ## Color TF (Expect image in the range of [0, 1]) ##
-    'Contrast',
-    'Color',
-    'Brightness',
-    'Sharpness',
-    'Posterize',
-    'Solarize', #=>Image entre [0,1] #Pas opti pour des batch
-
-    ## Bad Tranformations ##
-    # Bad Geometric TF #
-    #'BShearX',
-    #'BShearY',
-    #'BTranslateX-', 
-    #'BTranslateX-',
-    #'BTranslateY',
-    #'BTranslateY-',
-
-    #'BadContrast',
-    #'BadBrightness', 
-
-    #'Random',
-    #'RandBlend'
-]
-tf_dict = {k: TF.TF_dict[k] for k in tf_names}
-'''
 tf_config='../config/base_tf_config.json'
 TF_loader=TF_loader()
 tf_dict, tf_ignore_mag =TF_loader.load_TF_dict(tf_config)
@@ -91,7 +53,7 @@ if __name__ == "__main__":
     ### Benchmark ###
     #'''
     n_inner_iter = 1
-    dist_mix = [0.5]#[0.5, 1.0]
+    dist_mix = [0.5, 1.0]
     N_seq_TF= [3, 4]
     mag_setup = [(False, False)] #[(True, True), (False, False)] #(FxSh, Independant)
 
@@ -117,7 +79,8 @@ if __name__ == "__main__":
                                             mix_dist=dist, 
                                             fixed_prob=False, 
                                             fixed_mag=m_setup[0], 
-                                            shared_mag=m_setup[1]), 
+                                            shared_mag=m_setup[1],
+                                            TF_ignore_mag=tf_ignore_mag), 
                                         model).to(device)
                                 else:
                                     aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=n_tf), model).to(device)

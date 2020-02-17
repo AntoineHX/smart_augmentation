@@ -19,7 +19,7 @@ import kornia
 import random
 
 #TF that don't have use for magnitude parameter.
-TF_no_mag={'Identity', 'FlipUD', 'FlipLR', 'Random', 'RandBlend', 'identity', 'flipUD', 'flipLR'}
+TF_no_mag={'Identity', 'FlipUD', 'FlipLR', 'Random', 'RandBlend', 'identity', 'flip'}
 #TF which implemetation doesn't allow gradient propagaition.
 TF_no_grad={'Solarize', 'Posterize', '=Solarize', '=Posterize', 'posterize','solarize'}
 #TF for which magnitude should be ignored (Magnitude fixed).
