@@ -6,9 +6,10 @@ from LeNet import *
 from dataug import *
 #from utils import *
 from train_utils import *
+#from transformations import TF_loader
 
 postfix=''
-TF_loader=TF_loader()
+TF_loader=TF.TF_loader()
 
 device = torch.device('cuda') #Select device to use
 
