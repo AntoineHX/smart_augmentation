@@ -6,10 +6,10 @@ from LeNet import *
 from dataug import *
 #from utils import *
 from train_utils import *
-#from transformations import TF_loader
+from transformations import TF_loader
 
 postfix=''
-TF_loader=TF.TF_loader()
+TF_loader=TF_loader()
 
 device = torch.device('cuda') #Select device to use
 
@@ -40,6 +40,7 @@ if __name__ == "__main__":
         'Meta':{
             'optim':'Adam',
             'lr':1e-2, #1e-2
+            'epoch_start': 2, #0 / 2 (Resnet?)
         },
         'Inner':{
             'optim': 'SGD',

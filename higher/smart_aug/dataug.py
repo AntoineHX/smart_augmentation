@@ -964,7 +964,7 @@ class Augmented_model(nn.Module):
 
                 model.step(loss)
                 
-            Does not support LR scheduler.
+            Lacking epoch informations, this does not support LR scheduler and delayed meta-optimisation(Meta-optimizer: epoch_start>1).
             
             See ''run_simple_smartaug'' for a complete example.
 

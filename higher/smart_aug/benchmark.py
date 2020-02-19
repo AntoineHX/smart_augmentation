@@ -4,6 +4,7 @@
 from dataug import *
 #from utils import *
 from train_utils import *
+from transformations import TF_loader
 
 import torchvision.models as models
 
@@ -13,6 +14,7 @@ optim_param={
     'Meta':{
         'optim':'Adam',
         'lr':1e-2, #1e-2
+        'epoch_start': 2, #0 / 2 (Resnet?)
     },
     'Inner':{
         'optim': 'SGD',
@@ -26,9 +28,9 @@ optim_param={
 
 res_folder="../res/benchmark/CIFAR10/"
 #res_folder="../res/HPsearch/"
-epochs= 200
+epochs= 300
 dataug_epoch_start=0
-nb_run= 3
+nb_run= 1
 
 tf_config='../config/base_tf_config.json'
 TF_loader=TF_loader()
