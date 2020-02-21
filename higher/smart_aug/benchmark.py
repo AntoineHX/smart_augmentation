@@ -8,7 +8,8 @@ from transformations import TF_loader
 
 import torchvision.models as models
 
-model_list={models.resnet: ['resnet18', 'resnet50','wide_resnet50_2']} #lr=0.1
+#model_list={models.resnet: ['resnet18', 'resnet50','wide_resnet50_2']} #lr=0.1
+model_list={models.resnet: ['resnet18']}
 
 optim_param={
     'Meta':{
@@ -28,7 +29,7 @@ optim_param={
 
 res_folder="../res/benchmark/CIFAR10/"
 #res_folder="../res/HPsearch/"
-epochs= 300
+epochs= 400
 dataug_epoch_start=0
 nb_run= 1
 
@@ -54,8 +55,8 @@ if __name__ == "__main__":
 
     ### Benchmark ###
     #'''
-    n_inner_iter = 1
-    dist_mix = [0.5, 1.0]
+    n_inner_iter = 1#[0, 1]
+    dist_mix = [0.5]
     N_seq_TF= [3, 4]
     mag_setup = [(False, False)] #[(True, True), (False, False)] #(FxSh, Independant)
 

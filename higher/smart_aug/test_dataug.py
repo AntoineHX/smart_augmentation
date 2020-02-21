@@ -69,8 +69,8 @@ if __name__ == "__main__":
         model = model.to(device)
 
 
-        print("{} on {} for {} epochs".format(model_name, device_name, epochs))
-        #print("RandAugment(N{}-M{:.2f})-{} on {} for {} epochs".format(rand_aug['N'],rand_aug['M'],model_name, device_name, epochs))
+        print("{} on {} for {} epochs{}".format(model_name, device_name, epochs, postfix))
+        #print("RandAugment(N{}-M{:.2f})-{} on {} for {} epochs{}".format(rand_aug['N'],rand_aug['M'],model_name, device_name, epochs, postfix))
         log= train_classic(model=model, opt_param=optim_param, epochs=epochs, print_freq=10)
         #log= train_classic_higher(model=model, epochs=epochs)
 
@@ -88,9 +88,9 @@ if __name__ == "__main__":
             #"Rand_Aug": rand_aug, 
             "Log": log}
         print(model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-        filename = "{}-{} epochs".format(model_name,epochs)
+        filename = "{}-{} epochs".format(model_name,epochs)+postfix
         #print("RandAugment-",model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-        #filename = "RandAugment(N{}-M{:.2f})-{}-{} epochs".format(rand_aug['N'],rand_aug['M'],model_name,epochs)+'-cosine'
+        #filename = "RandAugment(N{}-M{:.2f})-{}-{} epochs".format(rand_aug['N'],rand_aug['M'],model_name,epochs)+postfix
         with open("../res/log/%s.json" % filename, "w+") as f:
             try:
                 json.dump(out, f, indent=True)
@@ -128,7 +128,7 @@ if __name__ == "__main__":
                 TF_ignore_mag=tf_ignore_mag), model).to(device)
         #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
 
-        print("{} on {} for {} epochs - {} inner_it".format(str(aug_model), device_name, epochs, n_inner_iter))
+        print("{} on {} for {} epochs - {} inner_it{}".format(str(aug_model), device_name, epochs, n_inner_iter, postfix))
         log= run_dist_dataugV3(model=aug_model,
              epochs=epochs, 
              inner_it=n_inner_iter, 

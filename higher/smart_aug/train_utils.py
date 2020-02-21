@@ -247,7 +247,6 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
     device = next(model.parameters()).device
     log = []
     dl_val_it = iter(dl_val)
-    val_loss=None
 
     high_grad_track = True
     if inner_it == 0: #No HP optimization
@@ -298,6 +297,7 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
 
     for epoch in range(1, epochs+1):
         t0 = time.perf_counter()
+        val_loss=None
        
         #Cross-Validation
         #dl_train, dl_val = cvs.next_split()
