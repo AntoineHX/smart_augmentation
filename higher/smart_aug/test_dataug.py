@@ -34,13 +34,15 @@ if __name__ == "__main__":
     }
     #Parameters
     n_inner_iter = 1
-    epochs = 2
+    epochs = 200
     dataug_epoch_start=0
+    Nb_TF_seq=3
     optim_param={
         'Meta':{
             'optim':'Adam',
             'lr':1e-2, #1e-2
             'epoch_start': 2, #0 / 2 (Resnet?)
+            'reg_factor': 0.001,
         },
         'Inner':{
             'optim': 'SGD',
@@ -110,7 +112,7 @@ if __name__ == "__main__":
 
     #### Augmented Model ####
     if 'aug_model' in tasks:
-        tf_config='../config/base_tf_config.json'
+        tf_config='../config/invScale_wide_tf_config.json'#'../config/base_tf_config.json'
         tf_dict, tf_ignore_mag =TF_loader.load_TF_dict(tf_config)
 
         torch.cuda.reset_max_memory_allocated() #reset_peak_stats
@@ -118,15 +120,17 @@ if __name__ == "__main__":
         t0 = time.perf_counter()
 
         model = Higher_model(model, model_name) #run_dist_dataugV3
-        aug_model = Augmented_model(
-            Data_augV5(TF_dict=tf_dict, 
-                N_TF=1, 
-                mix_dist=0.5, 
-                fixed_prob=False, 
-                fixed_mag=False, 
-                shared_mag=False, 
-                TF_ignore_mag=tf_ignore_mag), model).to(device)
-        #aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=2), model).to(device)
+        if n_inner_iter !=0:
+            aug_model = Augmented_model(
+                Data_augV5(TF_dict=tf_dict, 
+                    N_TF=Nb_TF_seq, 
+                    mix_dist=0.5, 
+                    fixed_prob=False, 
+                    fixed_mag=False, 
+                    shared_mag=False, 
+                    TF_ignore_mag=tf_ignore_mag), model).to(device)
+        else:
+            aug_model = Augmented_model(RandAug(TF_dict=tf_dict, N_TF=Nb_TF_seq), model).to(device)
 
         print("{} on {} for {} epochs - {} inner_it{}".format(str(aug_model), device_name, epochs, n_inner_iter, postfix))
         log= run_dist_dataugV3(model=aug_model,
@@ -134,7 +138,7 @@ if __name__ == "__main__":
              inner_it=n_inner_iter, 
              dataug_epoch_start=dataug_epoch_start, 
              opt_param=optim_param,
-             print_freq=20, 
+             print_freq=10, 
              unsup_loss=1, 
              hp_opt=False,
              save_sample_freq=None)

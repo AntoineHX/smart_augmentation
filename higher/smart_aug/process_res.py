@@ -10,14 +10,15 @@ if __name__ == "__main__":
         #"res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-2.json",
         #"res/log/Aug_mod(RandAugUDA(18TFx2-Mag1)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
     ]
-    files = ["../res/benchmark/CIFAR10/log/RandAugment(N%d-M%.2f)-%s-200 epochs -%s.json"%(3,0.17,'wide_resnet50_2', str(run)) for run in range(3)]
-    files = ["../res/benchmark/CIFAR100/log/Aug_mod(Data_augV5(Mix%.1f-14TFx%d-Mag)-%s)-200 epochs (dataug:0)- 1 in_it-%s.json"%(0.5,3,'wide_resnet50_2', str(run)) for run in range(3)]
+    #files = ["../res/benchmark/CIFAR10/log/RandAugment(N%d-M%.2f)-%s-200 epochs -%s.json"%(3,0.17,'wide_resnet50_2', str(run)) for run in range(3)]
+    #files = ["../res/benchmark/CIFAR10/log/Aug_mod(RandAug(14TFx%d-Mag%d)-%s)-200 epochs (dataug:0)- 0 in_it-%s.json"%(2,1,'resnet18', str(run)) for run in range(1)]
+    files = ["../res/benchmark/CIFAR10/log/Aug_mod(Data_augV5(Mix%.1f-14TFx%d-Mag)-%s)-200 epochs (dataug:0)- 3 in_it-%s.json"%(0.5,3,'resnet18', str(run)) for run in range(1)]
 
     for idx, file in enumerate(files):
         #legend+=str(idx)+'-'+file+'\n'
         with open(file) as json_file:
             data = json.load(json_file)
-            plot_resV2(data['Log'], fig_name=file.replace("/log","").replace(".json",""))#, param_names=data['Param_names'])
+            plot_resV2(data['Log'], fig_name=file.replace("/log","").replace(".json",""), param_names=data['Param_names'], f1=True)
             #plot_TF_influence(data['Log'], param_names=data['Param_names'])
     #'''
     ## Loss , Acc, Proba = f(epoch) ##

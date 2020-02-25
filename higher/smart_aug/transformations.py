@@ -31,6 +31,13 @@ PARAMETER_MAX = 1
 # What is the min 'level' a transform could be predicted
 PARAMETER_MIN = 0.1 
 
+#Dict containing the value for wich TF are closer to identity
+#TF_identity={
+#    PARAMETER_MAX:{'Solarize', 'Posterize'},
+#    PARAMETER_MAX/2:{'Contrast','Color','Brightness','Sharpness'},
+#    PARAMETER_MIN:{'Rotate','TranslateX','TranslateY','ShearX','ShearY'},
+#}
+
 class TF_loader(object):
     """ Transformations builder.
 

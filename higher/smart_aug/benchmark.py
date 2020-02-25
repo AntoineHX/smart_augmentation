@@ -29,11 +29,11 @@ optim_param={
 
 res_folder="../res/benchmark/CIFAR10/"
 #res_folder="../res/HPsearch/"
-epochs= 400
+epochs= 200
 dataug_epoch_start=0
 nb_run= 1
 
-tf_config='../config/base_tf_config.json'
+tf_config='../config/wide_tf_config.json' #'../config/wide_tf_config.json'#'../config/base_tf_config.json'
 TF_loader=TF_loader()
 tf_dict, tf_ignore_mag =TF_loader.load_TF_dict(tf_config)
 
@@ -55,15 +55,16 @@ if __name__ == "__main__":
 
     ### Benchmark ###
     #'''
-    n_inner_iter = 1#[0, 1]
+    inner_its = [3]
     dist_mix = [0.5]
-    N_seq_TF= [3, 4]
+    N_seq_TF= [3]
     mag_setup = [(False, False)] #[(True, True), (False, False)] #(FxSh, Independant)
 
     for model_type in model_list.keys():
             for model_name in model_list[model_type]:
                 for run in range(nb_run):
 
+                    for n_inner_iter in inner_its:
                      for n_tf in N_seq_TF:
                         for dist in dist_mix:
                             for m_setup in mag_setup:
