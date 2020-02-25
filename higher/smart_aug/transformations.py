@@ -29,7 +29,7 @@ TF_ignore_mag= TF_no_mag | TF_no_grad
 # What is the max 'level' a transform could be predicted
 PARAMETER_MAX = 1
 # What is the min 'level' a transform could be predicted
-PARAMETER_MIN = 0.1 
+PARAMETER_MIN = 0.01 
 
 #Dict containing the value for wich TF are closer to identity
 #TF_identity={
