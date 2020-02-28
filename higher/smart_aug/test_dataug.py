@@ -8,7 +8,7 @@ from dataug import *
 from train_utils import *
 from transformations import TF_loader
 
-postfix='-metaScheduler'
+postfix='-MetaScheduler2'
 TF_loader=TF_loader()
 
 device = torch.device('cuda') #Select device to use
@@ -34,13 +34,13 @@ if __name__ == "__main__":
     }
     #Parameters
     n_inner_iter = 1
-    epochs = 200
+    epochs = 100
     dataug_epoch_start=0
     Nb_TF_seq=3
     optim_param={
         'Meta':{
             'optim':'Adam',
-            'lr':1e-4, #1e-2
+            'lr':1e-3, #1e-2
             'epoch_start': 2, #0 / 2 (Resnet?)
             'reg_factor': 0.001,
             'scheduler': 'multiStep', #None, 'multiStep'

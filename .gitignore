@@ -1,10 +1,12 @@
 /higher/data
 /higher/samples
 /higher/doc
-/Gradient-Descent-The-Ultimate-Optimizer/data
-/FAR-HO/data
+/Old/Gradient-Descent-The-Ultimate-Optimizer/data
+/Old/FAR-HO/data
+/Old/salvador/data
 /__pycache__
 
+/higher/higher.egg-info/
 *.pyo
 *.pyc
 *~

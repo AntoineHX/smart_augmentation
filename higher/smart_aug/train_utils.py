@@ -295,8 +295,8 @@ def run_dist_dataugV3(model, opt_param, epochs=1, inner_it=1, dataug_epoch_start
     meta_scheduler=None
     if opt_param['Meta']['scheduler']=='multiStep':
         meta_scheduler=torch.optim.lr_scheduler.MultiStepLR(meta_opt, 
-            milestones=[int(epochs/3), int(epochs*2/3), int(epochs*2.7/3)], 
-            gamma=10)
+            milestones=[int(epochs/3), int(epochs*2/3)]#, int(epochs*2.7/3)], 
+            gamma=3.16)#10)
     elif opt_param['Meta']['scheduler'] is not None:
         raise ValueError("Lr scheduler unknown : %s"%opt_param['Meta']['scheduler'])
 
