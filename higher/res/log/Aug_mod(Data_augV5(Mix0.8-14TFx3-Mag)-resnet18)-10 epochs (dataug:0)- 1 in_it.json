@@ -1,0 +1,42 @@
+{
+ "Accuracy": 52.19,
+ "Time": [
+  130.27321553969995,
+  1.380892878143076,
+  1309.536870188
+ ],
+ "Optimizer": {
+  "Meta": {
+   "optim": "Adam",
+   "lr": 0.01
+  },
+  "Inner": {
+   "optim": "SGD",
+   "lr": 0.01,
+   "momentum": 0.9
+  }
+ },
+ "Device": "TITAN RTX",
+ "Param_names": [
+  "Identity",
+  "FlipUD",
+  "FlipLR",
+  "Rotate",
+  "TranslateX",
+  "TranslateY",
+  "ShearX",
+  "ShearY",
+  "Contrast",
+  "Color",
+  "Brightness",
+  "Sharpness",
+  "Posterize",
+  "Solarize"
+ ],
+ "Log": [
+  {
+   "epoch": 1,
+   "train_loss": 4.225668907165527,
+   "val_loss": 2.247692584991455,
+   "acc": 18.79,
+   "f1": 
