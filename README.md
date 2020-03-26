@@ -87,7 +87,7 @@ Transformation | Min | Max
 'Posterize' | 4 | 8
 'Solarize' | 1 | 256
 
-Those parameters needs to be float value to allow differentiable transformations.
+Those parameters needs to be float value to allow differentiable transformations and can be configured in JSON files format (see config folder).
 
 There's also other transformations available in 'transformations.py' but they're mostly intended to test purposes and not recommended in general.
 
