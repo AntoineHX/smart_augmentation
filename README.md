@@ -69,7 +69,7 @@ The following Tensor based transformations are available:
 ..* 'Posterize'
 ..* 'Solarize'
 
-A side effect of these Tensor based transformations is that they will outperform, in terms of speed on GPU, their non-PyTorch version as the sized of the images batches increase.
+A side effect of these Tensor based transformations is that they should outperform, in terms of speed on GPU, their non-PyTorch version as the size of the images batches increase.
 
 **Please note** that each has defined fixed bound for it's magnitude parameters in 'transformtions.py'. This values are inspired from 'AutoAugment' but it could be needed to change those (especially for images size different from 32x32 pixels). See below the default values used :
 
@@ -87,7 +87,9 @@ Transformation | Min | Max
 'Posterize' | 4 | 8
 'Solarize' | 1 | 256
 
-Those parameters needs to be float value to allow differentiable transformations and can be configured in JSON files format (see config folder).
+Those parameters needs to be float value to allow differentiable transformations and can be configured in JSON files format (see 'config' folder).
+
+It is recommended to use the 'invScale_wide_tf_config.json' config.
 
 There's also other transformations available in 'transformations.py' but they're mostly intended to test purposes and not recommended in general.
 
