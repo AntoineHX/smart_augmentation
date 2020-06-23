@@ -1,0 +1,74 @@
+[
+    {
+    "name": "Identity",
+    "function": "identity"
+    },
+    {
+    "name": "FlipUD",
+    "function": "flip",
+    "param": {
+      "axis": "Y"
+      }
+    },
+    {
+    "name": "FlipLR",
+    "function": "flip",
+    "param": {
+      "axis": "X"
+      }
+    },
+    {
+    "name": "Rotate",
+    "function": "rotate",
+    "param": {
+      "min": null,
+      "max": 180,
+      "invScale": false
+      }
+    },
+    {
+    "name": "TranslateX",
+    "function": "translate",
+    "param": {
+      "axis": "X",
+      "min": null,
+      "max": 0.5,
+      "absolute": false,
+      "invScale": false
+      }
+    },
+    {
+    "name": "TranslateY",
+    "function": "translate",
+    "param": {
+      "axis": "Y",
+      "min": null,
+      "max": 0.5,
+      "absolute": false,
+      "invScale": false
+      }
+    },
+    {
+    "name": "ShearX",
+    "function": "shear",
+    "param": {
+      "axis": "X",
+      "min": null,
+      "max": 1.0,
+      "absolute": true,
+      "invScale": false
+      }
+    },
+    {
+    "name": "ShearY",
+    "function": "shear",
+    "param": {
+      "axis": "Y",
+      "min": null,
+      "max": 1.0,
+      "absolute": true,
+      "invScale": false
+      }
+    }
+   ]
+   

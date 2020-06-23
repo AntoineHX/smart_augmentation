@@ -1,0 +1,139 @@
+[
+ {
+ "name": "Identity",
+ "function": "identity"
+ },
+ {
+ "name": "FlipUD",
+ "function": "flip",
+ "param": {
+   "axis": "Y"
+  }
+ },
+ {
+ "name": "FlipLR",
+ "function": "flip",
+ "param": {
+   "axis": "X"
+  }
+ },
+ {
+ "name": "Rotate",
+ "function": "rotate",
+ "param": {
+   "min": null,
+   "max": 30,
+   "invScale": false
+  }
+ },
+ {
+ "name": "TranslateX",
+ "function": "translate",
+ "param": {
+   "axis": "X",
+   "min": null,
+   "max": 0.33,
+   "absolute": false,
+   "invScale": false
+  }
+ },
+ {
+ "name": "TranslateY",
+ "function": "translate",
+ "param": {
+   "axis": "Y",
+   "min": null,
+   "max": 0.33,
+   "absolute": false,
+   "invScale": false
+  }
+ },
+ {
+ "name": "ShearX",
+ "function": "shear",
+ "param": {
+   "axis": "X",
+   "min": null,
+   "max": 0.3,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "ShearY",
+ "function": "shear",
+ "param": {
+   "axis": "Y",
+   "min": null,
+   "max": 0.3,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BTranslateX",
+ "function": "translate",
+ "param": {
+   "axis": "X",
+   "min": 25,
+   "max": 30,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BTranslateX-",
+ "function": "translate",
+ "param": {
+   "axis": "X",
+   "min": -30,
+   "max": -25,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BTranslateY",
+ "function": "translate",
+ "param": {
+   "axis": "Y",
+   "min": 25,
+   "max": 30,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BTranslateY-",
+ "function": "translate",
+ "param": {
+   "axis": "Y",
+   "min": -30,
+   "max": -25,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BShearX",
+ "function": "shear",
+ "param": {
+   "axis": "X",
+   "min": 0.9,
+   "max": 1.2,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BShearY",
+ "function": "shear",
+ "param": {
+   "axis": "Y",
+   "min": 0.9,
+   "max": 1.2,
+   "absolute": true,
+   "invScale": false
+  }
+ }
+]
