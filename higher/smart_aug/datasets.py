@@ -2,41 +2,47 @@
 
     MNIST / CIFAR10 / CIFAR100 / SVHN / ImageNet
 """
+import os
 import torch
 from torch.utils.data.dataset import ConcatDataset
 import torchvision
+from arg_parser import *
 
-#Train/Validation batch size.
-BATCH_SIZE = 512
-#Test batch size.
-TEST_SIZE = BATCH_SIZE 
-#TEST_SIZE = 10000 #legerement +Rapide / + Consomation memoire !
+args = parser.parse_args()
 
 #Wether to download data.
 download_data=False
-#Number of worker to use.
-num_workers=2 #4
 #Pin GPU memory
 pin_memory=False #True :+ GPU memory / + Lent
 #Data storage folder
-dataroot="../data"
+dataroot=args.dataroot
+
+# if args.dtype == 'FP32':
+#     def_type=torch.float32
+# elif args.dtype == 'FP16':
+#     # def_type=torch.float16 #Default : float32
+#     def_type=torch.bfloat16
+# else:
+#     raise Exception('dtype not supported :', args.dtype)
 
 #ATTENTION : Dataug (Kornia) Expect image in the range of [0, 1]
-#transform_train = torchvision.transforms.Compose([
-#    torchvision.transforms.RandomHorizontalFlip(),
-#    torchvision.transforms.ToTensor(),
-#    torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)), #CIFAR10
-#])
-transform = torchvision.transforms.Compose([
+transform = [
+    #torchvision.transforms.Grayscale(3), #MNIST
+    #torchvision.transforms.Resize((224,224), interpolation=2)#VGG
     torchvision.transforms.ToTensor(),
-#    torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)), #CIFAR10
-])
+    #torchvision.transforms.Normalize(MEAN, STD), #CIFAR10
+    # torchvision.transforms.Lambda(lambda tensor: tensor.to(def_type)),
+]
 
-transform_train = torchvision.transforms.Compose([
+transform_train = [
     #transforms.RandomHorizontalFlip(),
     #transforms.RandomVerticalFlip(),
+    #torchvision.transforms.Grayscale(3), #MNIST
+    #torchvision.transforms.Resize((224,224), interpolation=2)
     torchvision.transforms.ToTensor(),
-])
+    #torchvision.transforms.Normalize(MEAN, STD), #CIFAR10
+    # torchvision.transforms.Lambda(lambda tensor: tensor.to(def_type)),
+]
 
 ## RandAugment ##
 #from RandAugment import RandAugment
@@ -49,20 +55,77 @@ transform_train = torchvision.transforms.Compose([
 #transform_train.transforms.insert(0, RandAugment(n=rand_aug['N'], m=rand_aug['M']))
 
 ### Classic Dataset ###
+BATCH_SIZE = args.batch_size
+TEST_SIZE = BATCH_SIZE
+# Load Dataset
+if args.dataset == 'MNIST':
+    transform_train.insert(0, torchvision.transforms.Grayscale(3))
+    transform.insert(0, torchvision.transforms.Grayscale(3))
 
-#MNIST
-#data_train = torchvision.datasets.MNIST(dataroot, train=True, download=True, transform=transform_train)
-#data_val = torchvision.datasets.MNIST(dataroot, train=True, download=True, transform=transform)
-#data_test = torchvision.datasets.MNIST(dataroot, train=False, download=True, transform=transform)
+    val_set=False
+    data_train = torchvision.datasets.MNIST(dataroot, train=True, download=True, transform=torchvision.transforms.Compose(transform_train))
+    data_val = torchvision.datasets.MNIST(dataroot, train=True, download=True, transform=torchvision.transforms.Compose(transform))
+    data_test = torchvision.datasets.MNIST(dataroot, train=False, download=True, transform=torchvision.transforms.Compose(transform))
+elif args.dataset == 'CIFAR10': #(32x32 RGB)
+    val_set=False
+    MEAN=(0.4914, 0.4822, 0.4465)
+    STD=(0.2023, 0.1994, 0.2010)
+    data_train = torchvision.datasets.CIFAR10(dataroot, train=True, download=download_data, transform=torchvision.transforms.Compose(transform_train))
+    data_val = torchvision.datasets.CIFAR10(dataroot, train=True, download=download_data, transform=torchvision.transforms.Compose(transform))
+    data_test = torchvision.datasets.CIFAR10(dataroot, train=False, download=download_data, transform=torchvision.transforms.Compose(transform))
+elif args.dataset == 'CIFAR100': #(32x32 RGB)
+    val_set=False
+    MEAN=(0.4914, 0.4822, 0.4465)
+    STD=(0.2023, 0.1994, 0.2010)
+    data_train = torchvision.datasets.CIFAR100(dataroot, train=True, download=download_data, transform=torchvision.transforms.Compose(transform_train))
+    data_val = torchvision.datasets.CIFAR100(dataroot, train=True, download=download_data, transform=torchvision.transforms.Compose(transform))
+    data_test = torchvision.datasets.CIFAR100(dataroot, train=False, download=download_data, transform=torchvision.transforms.Compose(transform))
+elif args.dataset == 'TinyImageNet': #(Train:100k, Val:5k, Test:5k) (64x64 RGB)
+    image_size=64 #128 / 224
+    print('Using image size', image_size)
+    transform_train=[torchvision.transforms.Resize(image_size), torchvision.transforms.CenterCrop(image_size)]+transform_train
+    transform=[torchvision.transforms.Resize(image_size), torchvision.transforms.CenterCrop(image_size)]+transform
+    
+    val_set=True
+    MEAN=(0.485, 0.456, 0.406)
+    STD=(0.229, 0.224, 0.225)
+    data_train = torchvision.datasets.ImageFolder(os.path.join(dataroot, 'tiny-imagenet-200/train'), transform=torchvision.transforms.Compose(transform_train))
+    data_val = torchvision.datasets.ImageFolder(os.path.join(dataroot, 'tiny-imagenet-200/val'), transform=torchvision.transforms.Compose(transform))
+    data_test = torchvision.datasets.ImageFolder(os.path.join(dataroot, 'tiny-imagenet-200/test'), transform=torchvision.transforms.Compose(transform))
+elif args.dataset == 'ImageNet': #
+    image_size=128 #224
+    print('Using image size', image_size)
+    transform_train=[torchvision.transforms.Resize(image_size), torchvision.transforms.CenterCrop(image_size)]+transform_train
+    transform=[torchvision.transforms.Resize(image_size), torchvision.transforms.CenterCrop(image_size)]+transform
+    
+    val_set=False
+    MEAN=(0.485, 0.456, 0.406)
+    STD=(0.229, 0.224, 0.225)
+    data_train = torchvision.datasets.ImageFolder(root=os.path.join(dataroot, 'ImageNet/train'), transform=torchvision.transforms.Compose(transform_train))
+    data_val = torchvision.datasets.ImageFolder(root=os.path.join(dataroot, 'ImageNet/train'), transform=torchvision.transforms.Compose(transform))
+    data_test = torchvision.datasets.ImageFolder(root=os.path.join(dataroot, 'ImageNet/validation'), transform=torchvision.transforms.Compose(transform))
 
-#CIFAR
-data_train = torchvision.datasets.CIFAR10(dataroot, train=True, download=download_data, transform=transform_train)
-data_val = torchvision.datasets.CIFAR10(dataroot, train=True, download=download_data, transform=transform)
-data_test = torchvision.datasets.CIFAR10(dataroot, train=False, download=download_data, transform=transform)
+else:
+    raise Exception('Unknown dataset')
 
-#data_train = torchvision.datasets.CIFAR100(dataroot, train=True, download=download_data, transform=transform_train)
-#data_val = torchvision.datasets.CIFAR100(dataroot, train=True, download=download_data, transform=transform)
-#data_test = torchvision.datasets.CIFAR100(dataroot, train=False, download=download_data, transform=transform)
+# Ready dataloader
+if not val_set : #Split Training set into Train/Val
+    #Validation set size [0, 1]
+    valid_size=0.1
+    train_subset_indices=range(int(len(data_train)*(1-valid_size)))
+    val_subset_indices=range(int(len(data_train)*(1-valid_size)),len(data_train))
+    #train_subset_indices=range(BATCH_SIZE*10)
+    #val_subset_indices=range(BATCH_SIZE*10, BATCH_SIZE*20)
+
+    from torch.utils.data import SubsetRandomSampler
+    dl_train = torch.utils.data.DataLoader(data_train, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(train_subset_indices), num_workers=args.workers, pin_memory=pin_memory)
+    dl_val = torch.utils.data.DataLoader(data_val, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(val_subset_indices), num_workers=args.workers, pin_memory=pin_memory)
+    dl_test = torch.utils.data.DataLoader(data_test, batch_size=TEST_SIZE, shuffle=False, num_workers=args.workers, pin_memory=pin_memory)
+else:
+    dl_train = torch.utils.data.DataLoader(data_train, batch_size=BATCH_SIZE, shuffle=True, num_workers=args.workers, pin_memory=pin_memory)
+    dl_val = torch.utils.data.DataLoader(data_val, batch_size=BATCH_SIZE, shuffle=True, num_workers=args.workers, pin_memory=pin_memory)
+    dl_test = torch.utils.data.DataLoader(data_test, batch_size=TEST_SIZE, shuffle=False, num_workers=args.workers, pin_memory=pin_memory)
+
 
 #SVHN
 #trainset = torchvision.datasets.SVHN(root=dataroot, split='train', download=download_data, transform=transform_train)
@@ -75,19 +138,6 @@ data_test = torchvision.datasets.CIFAR10(dataroot, train=False, download=downloa
 # Probleme ? : https://github.com/ildoonet/pytorch-randaugment/blob/48b8f509c4bbda93bbe733d98b3fd052b6e4c8ae/RandAugment/imagenet.py#L28
 #data_train = torchvision.datasets.ImageNet(root=os.path.join(dataroot, 'imagenet-pytorch'), split='train', transform=transform_train)
 #data_test = torchvision.datasets.ImageNet(root=os.path.join(dataroot, 'imagenet-pytorch'), split='val', transform=transform_test)
-
-
-#Validation set size [0, 1]
-valid_size=0.1
-train_subset_indices=range(int(len(data_train)*(1-valid_size)))
-val_subset_indices=range(int(len(data_train)*(1-valid_size)),len(data_train))
-#train_subset_indices=range(BATCH_SIZE*10)
-#val_subset_indices=range(BATCH_SIZE*10, BATCH_SIZE*20)
-
-from torch.utils.data import SubsetRandomSampler
-dl_train = torch.utils.data.DataLoader(data_train, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(train_subset_indices), num_workers=num_workers, pin_memory=pin_memory)
-dl_val = torch.utils.data.DataLoader(data_val, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(val_subset_indices), num_workers=num_workers, pin_memory=pin_memory)
-dl_test = torch.utils.data.DataLoader(data_test, batch_size=TEST_SIZE, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
 
 #Cross Validation
 '''

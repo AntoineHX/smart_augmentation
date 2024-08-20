@@ -21,8 +21,8 @@ import json
 
 #TF that don't have use for magnitude parameter.
 TF_no_mag={'Identity', 'FlipUD', 'FlipLR', 'Random', 'RandBlend', 'identity', 'flip'}
-#TF which implemetation doesn't allow gradient propagaition.
-TF_no_grad={'Solarize', 'Posterize', '=Solarize', '=Posterize', 'posterize','solarize'}
+#TF which implemetation doesn't allow gradient propagaition. 
+TF_no_grad={'Solarize', 'Posterize', '=Solarize', '=Posterize', 'posterize','solarize'} #Numpy implementation would be better ?
 #TF for which magnitude should be ignored (Magnitude fixed).
 TF_ignore_mag= TF_no_mag | TF_no_grad 
 
@@ -37,6 +37,17 @@ PARAMETER_MIN = 0.01
 #    PARAMETER_MAX/2:{'Contrast','Color','Brightness','Sharpness'},
 #    PARAMETER_MIN:{'Rotate','TranslateX','TranslateY','ShearX','ShearY'},
 #}
+
+class Normalizer(object):
+    def __init__(self, mean, std):
+        self.mean=torch.tensor(mean)
+        self.std=torch.tensor(std)
+    def __call__(self, x):
+        # return x.sub_(self.mean.to(x.device)[None, :, None, None]).div_(self.std.to(x.device)[None, :, None, None])
+        return kornia.color.normalize(x, self.mean, self.std)
+    def reverse(self, x):
+        # return x.mul_(self.std.to(x.device)[None, :, None, None]).add_(self.mean.to(x.device)[None, :, None, None])
+        return kornia.color.denormalize(x, self.mean, self.std).to(torch.half).to(torch.float)
 
 class TF_loader(object):
     """ Transformations builder.
@@ -91,13 +102,15 @@ class TF_loader(object):
                 else:
                     raise Exception("Unknown TF axis : %s in %s"%(tf['function'], self._filename))
 
-            elif tf['function'] in {'translate', 'shear'}:
-                rand_fct= 'invScale_rand_floats' if tf['param']['invScale'] else 'rand_floats'
-                self._TF_dict[tf['name']]=self.build_lambda(tf['function'], rand_fct, tf['param']['min'], tf['param']['max'], tf['param']['absolute'], tf['param']['axis'])
+            # elif tf['function'] in {'translate', 'shear'}:
+            #     rand_fct= 'invScale_rand_floats' if tf['param']['invScale'] else 'rand_floats'
+            #     self._TF_dict[tf['name']]=self.build_lambda(tf['function'], rand_fct, tf['param']['min'], tf['param']['max'], tf['param']['absolute'], tf['param']['axis'])
             
             else:
+                axis = tf['param']['axis'] if 'axis' in tf['param'].keys() else None
+                absolute = tf['param']['absolute'] if 'absolute' in tf['param'].keys() else True
                 rand_fct= 'invScale_rand_floats' if tf['param']['invScale'] else 'rand_floats'
-                self._TF_dict[tf['name']]=self.build_lambda(tf['function'], rand_fct, tf['param']['min'], tf['param']['max'])
+                self._TF_dict[tf['name']]=self.build_lambda(tf['function'], rand_fct, tf['param']['min'], tf['param']['max'], absolute, axis)
 
         return self._TF_dict, self._TF_ignore_mag
 
@@ -130,7 +143,7 @@ class TF_loader(object):
                                 size=x.shape[0], 
                                 mag=mag, 
                                 minval=minval, 
-                                maxval=maxval)))
+                                maxval=max_val_fct(max(x.shape[2],x.shape[3]))))) 
         elif axis =='X':
             return (lambda x, mag: 
                 globals()[fct_name](
@@ -418,6 +431,46 @@ def posterize(x, bits):
     mask = mask.unsqueeze(dim=1).expand(-1,channels).unsqueeze(dim=2).expand(-1,channels, h).unsqueeze(dim=3).expand(-1,channels, h, w) #Il y a forcement plus simple ...
 
     return float_image(x & mask)
+
+def cutout(img, length):
+    """
+    Args:
+        img (Tensor): Batch of images. Expect image value between [0, 1].
+        length (Tensor): The length (in pixels) of each square patch.
+    Returns:
+        Tensor: Images with single holes of dimension length x length cut out of it.
+    """
+    device = img.device
+    (batch_size, channels, h, w) = img.shape
+
+    # mask = np.ones((h, w), np.float32)
+    mask = torch.ones((batch_size, h, w), device=device)
+    length=length.type(torch.uint8)
+
+    # y = np.random.randint(h)
+    # x = np.random.randint(w)
+    y = torch.randint(low=0, high=h, size=(batch_size,)).to(device)
+    x = torch.randint(low=0, high=w, size=(batch_size,)).to(device)
+
+    # y1 = np.clip(y - length // 2, 0, h)
+    # y2 = np.clip(y + length // 2, 0, h)
+    # x1 = np.clip(x - length // 2, 0, w)
+    # x2 = np.clip(x + length // 2, 0, w)
+    y1 = (y - length // 2).clamp(min=0, max=h)
+    y2 = (y + length // 2).clamp(min=0, max=h)
+    x1 = (x - length // 2).clamp(min=0, max=w)
+    x2 = (x + length // 2).clamp(min=0, max=w)
+
+    # mask[y1: y2, x1: x2] = 0.
+    for idx in range(batch_size): #Pas opti pour des batch
+        mask[idx, y1[idx]: y2[idx], x1[idx]: x2[idx]]= 0.
+
+    # mask = torch.from_numpy(mask)
+    # mask = mask.expand_as(img)
+    mask = mask.unsqueeze(dim=1).expand_as(img)
+    img = img * mask
+
+    return img
 
 import torch.nn.functional as F
 def solarize(x, thresholds):

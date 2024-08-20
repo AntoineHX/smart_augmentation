@@ -1063,3 +1063,362 @@ class AugmentedDataset(VisionDataset):
 
     def __str__(self):
         return "CIFAR10(Sup:{}-Unsup:{}-{}TF)".format(self.dataset_info['sup'], self.dataset_info['unsup'], len(self._TF))
+
+class Data_augV7(nn.Module): #Proba sequentielles
+    """Data augmentation module with learnable parameters.
+
+        Applies transformations (TF) to batch of data.
+        Each TF is defined by a (name, probability of application, magnitude of distorsion) tuple which can be learned. For the full definiton of the TF, see transformations.py.
+        The TF probabilities defines a distribution from which we sample the TF applied.
+
+        Replace the use of TF by TF sets which are combinaisons of classic TF.
+
+        Attributes:
+            _data_augmentation (bool): Wether TF will be applied during forward pass.
+            _TF_dict (dict) : A dictionnary containing the data transformations (TF) to be applied.
+            _TF (list) : List of TF names.
+            _TF_ignore_mag (set): TF for which magnitude should be ignored (either it's fixed or unused).
+            _nb_tf (int) : Number of TF used.
+            _N_seqTF (int) : Number of TF to be applied sequentially to each inputs
+            _shared_mag (bool) : Wether to share a single magnitude parameters for all TF. Beware using shared mag with basic color TF as their lowest magnitude is at PARAMETER_MAX/2.
+            _fixed_mag (bool): Wether to lock the TF magnitudes.
+            _fixed_prob (bool): Wether to lock the TF probabilies.
+            _samples (list): Sampled TF index during last forward pass.
+            _temp (bool): Wether we use a mix of an uniform distribution and the real distribution (TF probabilites). If False, only a uniform distribution is used.
+            _fixed_temp (bool): Wether we lock the mix distribution factor.
+            _params (nn.ParameterDict): Learnable parameters.
+            _reg_tgt (Tensor): Target for the magnitude regularisation. Only used when _fixed_mag is set to false (ie. we learn the magnitudes).
+            _reg_mask (list): Mask selecting the TF considered for the regularisation.
+    """
+    def __init__(self, TF_dict, N_TF=1, temp=0.5, fixed_prob=False, fixed_mag=True, shared_mag=True, TF_ignore_mag=TF.TF_ignore_mag):
+        """Init Data_augv7.
+
+            Args:
+                TF_dict (dict): A dictionnary containing the data transformations (TF) to be applied. (default: use all available TF from transformations.py)
+                N_TF (int): Number of TF to be applied sequentially to each inputs. Minimum 2, otherwise prefer using Data_augV5. (default: 2)
+                temp (float): Proportion [0.0, 1.0] of the real distribution used for sampling/selection of the TF. Distribution = (1-temp)*Uniform_distribution + temp*Real_distribution. If None is given, try to learn this parameter. (default: 0)
+                fixed_prob (bool): Wether to lock the TF probabilies. (default: False)
+                fixed_mag (bool): Wether to lock the TF magnitudes. (default: True)
+                shared_mag (bool): Wether to share a single magnitude parameters for all TF. (default: True)
+                TF_ignore_mag (set): TF for which magnitude should be ignored (either it's fixed or unused).
+        """
+        super(Data_augV7, self).__init__()
+        assert len(TF_dict)>0
+        assert N_TF>=0
+
+        if N_TF<2:
+            print("WARNING: Data_augv7 isn't designed to use less than 2 sequentials TF. Please use Data_augv5 instead.")
+        
+        self._data_augmentation = True
+
+        #TF
+        self._TF_dict = TF_dict
+        self._TF= list(self._TF_dict.keys())
+        self._TF_ignore_mag= TF_ignore_mag
+        self._nb_tf= len(self._TF)
+        self._N_seqTF = N_TF
+
+        #Mag
+        self._shared_mag = shared_mag
+        self._fixed_mag = fixed_mag
+        if not self._fixed_mag and len([tf for tf in self._TF if tf not in self._TF_ignore_mag])==0:
+            print("WARNING: Mag would be fixed as current TF doesn't allow gradient propagation:",self._TF)
+            self._fixed_mag=True
+
+        #Distribution
+        self._fixed_prob=fixed_prob
+        self._samples = []
+
+        # self._temp = False
+        # if temp != 0.0: #Mix dist
+        #     self._temp = True
+
+        self._fixed_temp=True
+        if temp is None: #Learn Temperature
+            print("WARNING: Learning Temperature parameter isn't working with this version (No grad)")
+            self._fixed_temp = False
+            temp=0.5
+        
+        #TF sets
+        #import itertools
+        #itertools.product(range(self._nb_tf), repeat=self._N_seqTF)
+
+        #no_consecutive={idx for idx, t in enumerate(self._TF) if t in {'FlipUD', 'FlipLR'}} #Specific No consecutive ops
+        no_consecutive={idx for idx, t in enumerate(self._TF) if t not in {'Identity'}} #No consecutive same ops (except Identity)
+        cons_test = (lambda i, idxs:  i in no_consecutive and len(idxs)!=0 and i==idxs[-1]) #Exclude selected consecutive
+        def generate_TF_sets(n_TF, set_size, idx_prefix=[]): #Generate every arrangement (with reuse) of TF (exclude cons_test arrangement)
+            TF_sets=[]
+            if set_size>1:
+                for i in range(n_TF):
+                    if not cons_test(i, idx_prefix):
+                        TF_sets += generate_TF_sets(n_TF, set_size=set_size-1, idx_prefix=idx_prefix+[i])
+            else:
+                TF_sets+=[[idx_prefix+[i]] for i in range(n_TF) if not cons_test(i, idx_prefix)]
+            return TF_sets
+
+        self._TF_sets=torch.ByteTensor(generate_TF_sets(self._nb_tf, self._N_seqTF)).squeeze()
+        self._nb_TF_sets=len(self._TF_sets)
+        print("Number of TF sets:",self._nb_TF_sets)
+        #print(self._TF_sets)
+        self._prob_mem=torch.zeros(self._nb_TF_sets)
+
+        #Params
+        init_mag = float(TF.PARAMETER_MAX) if self._fixed_mag else float(TF.PARAMETER_MAX)/2
+        self._params = nn.ParameterDict({
+            #"prob": nn.Parameter(torch.ones(self._nb_TF_sets)/self._nb_TF_sets), #Distribution prob uniforme
+            "prob": nn.Parameter(torch.ones(self._nb_TF_sets)),
+            "mag" : nn.Parameter(torch.tensor(init_mag) if self._shared_mag
+                            else torch.tensor(init_mag).repeat(self._nb_tf)), #[0, PARAMETER_MAX]
+            "temp": nn.Parameter(torch.tensor(temp))#.clamp(min=0.0,max=0.999))
+        })
+
+        #for tf in TF.TF_no_grad :
+        #    if tf in self._TF: self._params['mag'].data[self._TF.index(tf)]=float(TF.PARAMETER_MAX) #TF fixe a max parameter
+        #for t in TF.TF_no_mag: self._params['mag'][self._TF.index(t)].data-=self._params['mag'][self._TF.index(t)].data #Mag inutile pour les TF ignore_mag
+
+        #Mag regularisation
+        if not self._fixed_mag:
+            if  self._shared_mag :
+                self._reg_tgt = torch.FloatTensor(TF.PARAMETER_MAX) #Encourage amplitude max
+            else:
+                self._reg_mask=[idx for idx,t in enumerate(self._TF) if t not in self._TF_ignore_mag]
+                self._reg_tgt=torch.full(size=(len(self._reg_mask),), fill_value=TF.PARAMETER_MAX) #Encourage amplitude max
+
+    def forward(self, x):
+        """ Main method of the Data augmentation module.
+
+            Args:
+                x (Tensor): Batch of data.
+
+            Returns:
+                Tensor : Batch of tranformed data.
+        """
+        self._samples = None
+        if self._data_augmentation:# and TF.random.random() < 0.5:
+            device = x.device
+            batch_size, h, w = x.shape[0], x.shape[2], x.shape[3]
+
+            x = copy.deepcopy(x) #Evite de modifier les echantillons par reference (Problematique pour des utilisations paralleles)
+            
+            ## Echantillonage ##
+            # uniforme_dist = torch.ones(1,self._nb_TF_sets,device=device).softmax(dim=1)
+
+            # if not self._temp:
+            #     self._distrib = uniforme_dist        
+            # else:
+            #     prob = self._params["prob"].detach() if self._fixed_prob else self._params["prob"]
+            #     prob = F.softmax(prob, dim=0)
+            #     temp = self._params["temp"].detach() if self._fixed_temp else self._params["temp"]
+            #     self._distrib = (temp*prob+(1-temp)*uniforme_dist)#.softmax(dim=1) #Mix distrib reel / uniforme avec mix_factor
+
+            cat_distrib= Categorical(probs=torch.ones((batch_size, self._nb_TF_sets), device=device)*self._distrib)
+            sample = cat_distrib.sample()
+            
+            self._samples=sample
+            TF_samples=self._TF_sets[sample,:].to(device) #[Batch_size, TFseq]
+
+            for i in range(self._N_seqTF):
+                ## Transformations ##
+                x = self.apply_TF(x, TF_samples[:,i])
+        return x
+
+    def apply_TF(self, x, sampled_TF):
+        """ Applies the sampled transformations.
+
+            Args:
+                x (Tensor): Batch of data.
+                sampled_TF (Tensor): Indexes of the TF to be applied to each element of data.
+
+            Returns:
+                Tensor: Batch of tranformed data.
+        """
+        device = x.device
+        batch_size, channels, h, w = x.shape
+        smps_x=[]
+        
+        for tf_idx in range(self._nb_tf):
+            mask = sampled_TF==tf_idx #Create selection mask
+            smp_x = x[mask] #torch.masked_select() ? (Necessite d'expand le mask au meme dim)
+
+            if smp_x.shape[0]!=0: #if there's data to TF
+                magnitude=self._params["mag"] if self._shared_mag else self._params["mag"][tf_idx]
+                if self._fixed_mag: magnitude=magnitude.detach() #Fmodel tente systematiquement de tracker les gradient de tout les param
+
+                tf=self._TF[tf_idx]
+
+                #In place
+                #x[mask]=self._TF_dict[tf](x=smp_x, mag=magnitude)
+
+                #Out of place
+                smp_x = self._TF_dict[tf](x=smp_x, mag=magnitude)
+                idx= mask.nonzero()
+                idx= idx.expand(-1,channels).unsqueeze(dim=2).expand(-1,channels, h).unsqueeze(dim=3).expand(-1,channels, h, w) #Il y a forcement plus simple ...
+                x=x.scatter(dim=0, index=idx, src=smp_x)
+                                
+        return x
+
+    def adjust_param(self, soft=False): #Detach from gradient ?
+        """ Enforce limitations to the learned parameters.
+
+            Ensure that the parameters value stays in the right intevals. This should be called after each update of those parameters.
+
+            Args:
+                soft (bool): Wether to use a softmax function for TF probabilites. Not Recommended as it tends to lock the probabilities, preventing them to be learned. (default: False)
+        """
+        # if not self._fixed_prob:
+        #     if soft :
+        #         self._params['prob'].data=F.softmax(self._params['prob'].data, dim=0) #Trop 'soft', bloque en dist uniforme si lr trop faible
+        #     else:
+        #         self._params['prob'].data = self._params['prob'].data.clamp(min=1/(self._nb_tf*100),max=1.0)
+        #         self._params['prob'].data = self._params['prob']/sum(self._params['prob']) #Contrainte sum(p)=1
+
+        if not self._fixed_mag:
+            self._params['mag'].data = self._params['mag'].data.clamp(min=TF.PARAMETER_MIN, max=TF.PARAMETER_MAX)
+
+        if not self._fixed_temp:
+            self._params['temp'].data = self._params['temp'].data.clamp(min=0.0, max=0.999)
+
+    def loss_weight(self, batch_norm=True):
+        """ Weights for the loss.
+            Compute the weights for the loss of each inputs depending on wich TF was applied to them.
+            Should be applied to the loss before reduction.
+            
+            Do not take into account the order of application of the TF. See Data_augV7.
+
+            Args:
+                batch_norm (bool): Wether to normalize mean of the weights. (Default: True)
+            Returns:
+                Tensor : Loss weights.
+        """
+        if len(self._samples)==0 : return torch.tensor(1, device=self._params["prob"].device) #Pas d'echantillon = pas de ponderation
+
+        prob = self._params["prob"].detach() if self._fixed_prob else self._params["prob"]
+        # prob = F.softmax(prob, dim=0)
+        
+        w_loss = torch.zeros((self._samples.shape[0],self._nb_TF_sets), device=self._samples.device)
+        w_loss.scatter_(1, self._samples.view(-1,1), 1)
+
+        #Normalizing by mean, would lend an exact normalization but can lead to unstable behavior of probabilities.
+        w_loss = w_loss * prob
+        w_loss = torch.sum(w_loss,dim=1)
+
+        if batch_norm:
+            w_min = w_loss.min()
+            w_loss = w_loss-w_min if w_min<0 else w_loss
+            w_loss = w_loss/w_loss.mean() #mean(w_loss)=1
+        
+        #Normalizing by distribution is a statistical approximation of the exact normalization. It lead to more smooth probabilities evolution but will only return 1 if temp=1.
+        #     w_loss = w_loss * prob/self._distrib #Ponderation par les proba (divisee par la distrib pour pas diminuer la loss)
+        #     w_loss = torch.sum(w_loss,dim=1)
+
+        # if mean_norm:
+        #     w_loss = w_loss * prob
+        #     w_loss = torch.sum(w_loss,dim=1)
+        #     w_loss = w_loss/w_loss.mean() #mean(w_loss)=1
+        # else:
+        #     w_loss = w_loss * prob/self._distrib #Ponderation par les proba (divisee par la distrib pour pas diminuer la loss)
+        #     w_loss = torch.sum(w_loss,dim=1)
+        return w_loss
+
+    def reg_loss(self, reg_factor=0.005):
+        """ Regularisation term used to learn the magnitudes.
+            Use an L2 loss to encourage high magnitudes TF.
+
+            Args:
+                reg_factor (float): Factor by wich the regularisation loss is multiplied. (default: 0.005)
+            Returns:
+                Tensor containing the regularisation loss value.
+        """
+        if self._fixed_mag or self._fixed_prob: #Not enough DOF
+            return torch.tensor(0)
+        else:
+            #return reg_factor * F.l1_loss(self._params['mag'][self._reg_mask], target=self._reg_tgt, reduction='mean') 
+            mags = self._params['mag'] if self._params['mag'].shape==torch.Size([]) else self._params['mag'][self._reg_mask]
+            max_mag_reg = reg_factor * F.mse_loss(mags, target=self._reg_tgt.to(mags.device), reduction='mean')
+            return max_mag_reg
+
+    def TF_prob(self):
+        """ Gives an estimation of the individual TF probabilities.
+
+            Be warry that the probability returned isn't exact. The TF distribution isn't fully represented by those.
+            Each probability should be taken individualy. They only represent the chance for a specific TF to be picked at least once.
+
+            Returms:
+                Tensor containing the single TF probabilities of applications. 
+        """
+        if torch.all(self._params['prob']!=self._prob_mem.to(self._params['prob'].device)): #Prevent recompute if originial prob didn't changed
+            self._prob_mem=self._params['prob'].data.detach_()
+            prob = F.softmax(self._params["prob"]*self._params["temp"], dim=0)
+            self._single_TF_prob=torch.zeros(self._nb_tf)
+            for idx_tf in range(self._nb_tf):
+                for i, t_set in enumerate(self._TF_sets):
+                    #uni, count = np.unique(t_set, return_counts=True)
+                    #if idx_tf in uni:
+                    #    res[idx_tf]+=self._params['prob'][i]*int(count[np.where(uni==idx_tf)])
+                    if idx_tf in t_set:
+                        self._single_TF_prob[idx_tf]+=prob[i]
+
+        return self._single_TF_prob
+
+    def train(self, mode=True):
+        """ Set the module training mode.
+
+            Args:
+                mode (bool): Wether to learn the parameter of the module. None would not change mode. (default: None)
+        """
+        #if mode is None :
+        #    mode=self._data_augmentation
+        self.augment(mode=mode) #Inutile si mode=None
+        super(Data_augV7, self).train(mode)
+        return self
+
+    def eval(self):
+        """ Set the module to evaluation mode.
+        """
+        return self.train(mode=False)
+
+    def augment(self, mode=True):
+        """ Set the augmentation mode.
+
+            Args:
+                mode (bool): Wether to perform data augmentation on the forward pass. (default: True)
+        """
+        self._data_augmentation=mode
+
+    def is_augmenting(self):
+        """ Return wether data augmentation is applied.
+
+            Returns:
+                bool : True if data augmentation is applied.
+        """
+        return self._data_augmentation
+
+    def __getitem__(self, key):
+        """Access to the learnable parameters
+        Args:
+            key (string): Name of the learnable parameter to access.
+
+        Returns:
+            nn.Parameter.
+        """
+        if key == 'prob': #Override prob access
+            return self.TF_prob()
+        return self._params[key]
+
+    def __str__(self):
+        """Name of the module
+
+            Returns:
+                String containing the name of the module as well as the higher levels parameters.
+        """
+        dist_param=''
+        if self._fixed_prob: dist_param+='Fx'
+        mag_param='Mag'
+        if self._fixed_mag: mag_param+= 'Fx'
+        if self._shared_mag: mag_param+= 'Sh'
+        # if not self._temp:
+        #     return "Data_augV7(Uniform%s-%dTFx%d-%s)" % (dist_param, self._nb_tf, self._N_seqTF, mag_param)
+        if self._fixed_temp:
+            return "Data_augV7(T%.1f%s-%dTFx%d-%s)" % (self._params['temp'].item(),dist_param, self._nb_tf, self._N_seqTF, mag_param)
+        else:
+            return "Data_augV7(T%s-%dTFx%d-%s)" % (dist_param, self._nb_tf, self._N_seqTF, mag_param)

@@ -7,19 +7,22 @@ from train_utils import *
 from transformations import TF_loader
 
 import torchvision.models as models
+from LeNet import *
 
 #model_list={models.resnet: ['resnet18', 'resnet50','wide_resnet50_2']} #lr=0.1
-model_list={models.resnet: ['resnet18']}
+model_list={models.resnet: ['wide_resnet50_2']}
 
 optim_param={
     'Meta':{
         'optim':'Adam',
-        'lr':1e-2, #1e-2
+        'lr':5e-3, #1e-2
         'epoch_start': 2, #0 / 2 (Resnet?)
+        'reg_factor': 0.001,
+        'scheduler': None, #None, 'multiStep'
     },
     'Inner':{
         'optim': 'SGD',
-        'lr':1e-1, #1e-2/1e-1 (ResNet)
+        'lr':1e-2, #1e-2/1e-1 (ResNet)
         'momentum':0.9, #0.9
         'decay':0.0005, #0.0005
         'nesterov':False, #False (True: Bad behavior w/ Data_aug)
@@ -28,16 +31,17 @@ optim_param={
 }
 
 res_folder="../res/benchmark/CIFAR10/"
+#res_folder="../res/benchmark/MNIST/"
 #res_folder="../res/HPsearch/"
 epochs= 200
 dataug_epoch_start=0
-nb_run= 1
+nb_run= 3
 
-tf_config='../config/wide_tf_config.json' #'../config/wide_tf_config.json'#'../config/base_tf_config.json'
+tf_config='../config/bad_tf_config.json' #'../config/wide_tf_config.json'#'../config/base_tf_config.json'
 TF_loader=TF_loader()
 tf_dict, tf_ignore_mag =TF_loader.load_TF_dict(tf_config)
 
-device = torch.device('cuda')
+device = torch.device('cuda:1')
 
 if device == torch.device('cpu'):
     device_name = 'CPU'
@@ -54,8 +58,8 @@ np.random.seed(0)
 if __name__ == "__main__":
 
     ### Benchmark ###
-    #'''
-    inner_its = [3]
+    '''
+    inner_its = [0]
     dist_mix = [0.5]
     N_seq_TF= [3]
     mag_setup = [(False, False)] #[(True, True), (False, False)] #(FxSh, Independant)
@@ -74,6 +78,8 @@ if __name__ == "__main__":
                                 t0 = time.perf_counter()
 
                                 model = getattr(model_type, model_name)(pretrained=False, num_classes=len(dl_train.dataset.classes))
+                                #model_name = 'LeNet'
+                                #model = LeNet(3,10)
 
                                 model = Higher_model(model, model_name) #run_dist_dataugV3
                                 if n_inner_iter!=0:
@@ -122,12 +128,17 @@ if __name__ == "__main__":
                                         print('Log :\"',f.name, '\" saved !')
                                     except:
                                         print("Failed to save logs :",f.name)
+                                try:
+                                    plot_resV2(log, fig_name=res_folder+filename, param_names=aug_model.TF_names())
+                                except:
+                                    print("Failed to plot res")
+                                    print(sys.exc_info()[1])
 
                                 print('Execution Time : %.00f '%(exec_time))
                                 print('-'*9)
-    #'''
-    ### Benchmark - RandAugment/Vanilla ###
     '''
+    ### Benchmark - RandAugment/Vanilla ###
+    #'''
     for model_type in model_list.keys():
             for model_name in model_list[model_type]:
                 for run in range(nb_run):
@@ -155,7 +166,7 @@ if __name__ == "__main__":
                         #"Rand_Aug": rand_aug, 
                         "Log": log}
                     print(model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
-                    filename = "{}-{} epochs -{}".format(model_name,epochs, run)
+                    filename = "{}-{} epochs -{}-basicDA".format(model_name,epochs, run)
                     #print("RandAugment-",model_name,": acc", out["Accuracy"], "in:", out["Time"][0], "+/-", out["Time"][1])
                     #filename = "RandAugment(N{}-M{:.2f})-{}-{} epochs -{}".format(rand_aug['N'],rand_aug['M'],model_name,epochs, run)
                     with open(res_folder+"log/%s.json" % filename, "w+") as f:
@@ -166,11 +177,14 @@ if __name__ == "__main__":
                             print("Failed to save logs :",f.name)
                             print(sys.exc_info()[1])
 
-                    #plot_resV2(log, fig_name=res_folder+filename)
-
+                    try:
+                        plot_resV2(log, fig_name=res_folder+filename, param_names=aug_model.TF_names())
+                    except:
+                        print("Failed to plot res")
+                        print(sys.exc_info()[1])
                     print('Execution Time : %.00f '%(exec_time))
                     print('-'*9)
-    '''
+    #'''
     ### HP Search ###
     '''
     from LeNet import *

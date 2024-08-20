@@ -2,17 +2,18 @@ from utils import *
 
 if __name__ == "__main__":
 
-    #'''
-    files=[
-        "../res/HPsearch/log/Aug_mod(Data_augV5(Mix0.5-14TFx3-Mag)-ResNet)-200 epochs (dataug:0)- 1 in_it-0.json",
-        #"res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-0.json",
-        #"res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-1.json",
-        #"res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-2.json",
-        #"res/log/Aug_mod(RandAugUDA(18TFx2-Mag1)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
-    ]
-    #files = ["../res/benchmark/CIFAR10/log/RandAugment(N%d-M%.2f)-%s-200 epochs -%s.json"%(3,0.17,'wide_resnet50_2', str(run)) for run in range(3)]
-    #files = ["../res/benchmark/CIFAR10/log/Aug_mod(RandAug(14TFx%d-Mag%d)-%s)-200 epochs (dataug:0)- 0 in_it-%s.json"%(2,1,'resnet18', str(run)) for run in range(1)]
-    files = ["../res/benchmark/CIFAR10/log/Aug_mod(Data_augV5(Mix%.1f-14TFx%d-Mag)-%s)-200 epochs (dataug:0)- 3 in_it-%s.json"%(0.5,3,'resnet18', str(run)) for run in range(1)]
+    '''
+    # files=[
+    #     "../res/log/Aug_mod(Data_augV5(Mix0.5-18TFx3-Mag)-efficientnet-b1)-200 epochs (dataug 0)- 1 in_it__AL2.json",
+    #     #"res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-0.json",
+    #     #"res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-1.json",
+    #     #"res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-MagFxSh)-LeNet)-150epochs(dataug:0)-10in_it-2.json",
+    #     #"res/log/Aug_mod(RandAugUDA(18TFx2-Mag1)-LeNet)-100 epochs (dataug:0)- 0 in_it.json",
+    # ]
+    files = ["../res/benchmark/CIFAR10/log/RandAugment(N%d-M%.2f)-%s-200 epochs -%s.json"%(3,1,'resnet18', str(run)) for run in range(3)]
+    #files = ["../res/benchmark/CIFAR10/log/Aug_mod(RandAug(18TFx%d-Mag%d)-%s)-200 epochs (dataug:0)- 0 in_it-%s.json"%(2,1,'resnet18', str(run)) for run in range(3)]
+    #files = ["../res/benchmark/CIFAR10/log/Aug_mod(Data_augV5(Mix%.1f-18TFx%d-Mag)-%s)-200 epochs (dataug:0)- 1 in_it-%s.json"%(0.5,3,'resnet18', str(run)) for run in range(3)]
+
 
     for idx, file in enumerate(files):
         #legend+=str(idx)+'-'+file+'\n'
@@ -20,7 +21,41 @@ if __name__ == "__main__":
             data = json.load(json_file)
             plot_resV2(data['Log'], fig_name=file.replace("/log","").replace(".json",""), param_names=data['Param_names'], f1=True)
             #plot_TF_influence(data['Log'], param_names=data['Param_names'])
-    #'''
+    '''
+
+    #Res print
+    # '''
+    nb_run=3
+    accs = []
+    aug_accs = []
+    f1_max = []
+    f1_min = []
+    times = []
+    mem = []
+
+    files = ["../res/benchmark/log/Aug_mod(Data_augV5(T0.5-19TFx3-Mag)-resnet18)-200 epochs (dataug 0)- 1 in_it__%s.json"%(str(run)) for run in range(1, nb_run+1)]
+
+    for idx, file in enumerate(files):
+        #legend+=str(idx)+'-'+file+'\n'
+        with open(file) as json_file:
+            data = json.load(json_file)
+        accs.append(data['Accuracy'])
+        aug_accs.append(data['Aug_Accuracy'][1])
+        times.append(data['Time'][0])
+        mem.append(data['Memory'][1])
+
+        acc_idx = [x['acc'] for x in data['Log']].index(data['Accuracy'])
+        f1_max.append(max(data['Log'][acc_idx]['f1'])*100)
+        f1_min.append(min(data['Log'][acc_idx]['f1'])*100)
+        print(idx, accs[-1], aug_accs[-1])
+
+    print(files[0])
+    print("Acc : %.2f ~ %.2f / Aug_Acc %d: %.2f ~ %.2f"%(np.mean(accs), np.std(accs), data['Aug_Accuracy'][0], np.mean(aug_accs), np.std(aug_accs)))
+    print("F1 max : %.2f ~ %.2f / F1 min : %.2f ~ %.2f"%(np.mean(f1_max), np.std(f1_max), np.mean(f1_min), np.std(f1_min)))
+    print("Time (h): %.2f ~ %.2f"%(np.mean(times)/3600, np.std(times)/3600))
+    print("Mem (MB): %d ~ %d"%(np.mean(mem), np.std(mem)))
+    # '''
+
     ## Loss , Acc, Proba = f(epoch) ##
     #plot_compare(filenames=files, fig_name="res/compare")
 
@@ -79,37 +114,21 @@ if __name__ == "__main__":
     plt.close()
     '''
 
-    #Res print
-    '''
-    nb_run=3
-    accs = []
-    times = []
-    files = ["res/brutus-tests/log/Aug_mod(Data_augV5(Uniform-14TFx3-Mag)-LeNet)-150epochs(dataug:0)-1in_it-%s.json"%str(run) for run in range(nb_run)]
-    
-    for idx, file in enumerate(files):
-        #legend+=str(idx)+'-'+file+'\n'
-        with open(file) as json_file:
-            data = json.load(json_file)
-        accs.append(data['Accuracy'])
-        times.append(data['Time'][0])
-        print(idx, data['Accuracy'])
 
-    print(files[0], np.mean(accs), np.std(accs), np.mean(times))
-    '''
 
     '''
     #HP search
     inner_its = [1]
     dist_mix = [0.3, 0.5, 0.8, 1.0] #Uniform
-    N_seq_TF= [5]
+    N_seq_TF= [3]
     nb_run= 3
 
     for n_inner_iter in inner_its:
             for n_tf in N_seq_TF:
                 for dist in dist_mix:
 
-                    #files = ["../res/HPsearch/log/Aug_mod(Data_augV5(Mix%.1f-14TFx%d-MagFxSh)-ResNet)-200 epochs (dataug:0)- 1 in_it-%s.json"%(dist, n_tf, str(run)) for run in range(nb_run)]
-                    files = ["../res/HPsearch/log/Aug_mod(Data_augV5(Uniform-14TFx%d-MagFxSh)-ResNet)-200 epochs (dataug:0)- 1 in_it-%s.json"%(n_tf, str(run)) for run in range(nb_run)]
+                    files = ["../res/HPsearch/log/Aug_mod(Data_augV5(Mix%.1f-14TFx%d-Mag)-ResNet)-200 epochs (dataug:0)- 1 in_it-%s.json"%(dist, n_tf, str(run)) for run in range(nb_run)]
+                    #files = ["../res/HPsearch/log/Aug_mod(Data_augV5(Uniform-14TFx%d-MagFxSh)-ResNet)-200 epochs (dataug:0)- 1 in_it-%s.json"%(n_tf, str(run)) for run in range(nb_run)]
                     accs = []
                     times = []
                     for idx, file in enumerate(files):

@@ -129,9 +129,9 @@
  "function": "translate",
  "param": {
    "axis": "X",
-   "min": 25,
-   "max": 30,
-   "absolute": true,
+   "min": 0.75,
+   "max": 0.95,
+   "absolute": false,
    "invScale": false
   }
  },
@@ -140,9 +140,9 @@
  "function": "translate",
  "param": {
    "axis": "X",
-   "min": -25,
-   "max": -30,
-   "absolute": true,
+   "min": -0.95,
+   "max": -0.75,
+   "absolute": false,
    "invScale": false
   }
  },
@@ -151,9 +151,9 @@
  "function": "translate",
  "param": {
    "axis": "Y",
-   "min": 25,
-   "max": 30,
-   "absolute": true,
+   "min": 0.75,
+   "max": 0.95,
+   "absolute": false,
    "invScale": false
   }
  },
@@ -162,9 +162,9 @@
  "function": "translate",
  "param": {
    "axis": "Y",
-   "min": -25,
-   "max": -30,
-   "absolute": true,
+   "min": -0.95,
+   "max": -0.75,
+   "absolute": false,
    "invScale": false
   }
  },
@@ -180,12 +180,34 @@
   }
  },
  {
+ "name": "BShearX-",
+ "function": "shear",
+ "param": {
+   "axis": "X",
+   "min": -1.2,
+   "max": -0.9,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
  "name": "BShearY",
  "function": "shear",
  "param": {
    "axis": "Y",
    "min": 0.9,
    "max": 1.2,
+   "absolute": true,
+   "invScale": false
+  }
+ },
+ {
+ "name": "BShearY-",
+ "function": "shear",
+ "param": {
+   "axis": "Y",
+   "min": -1.2,
+   "max": -0.9,
    "absolute": true,
    "invScale": false
   }
