@@ -1,5 +1,8 @@
 *.png
-higher/data/
+#Ignore datasets
+higher/data/*
+# keep data folder
+!higher/data/.gitkeep 
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
